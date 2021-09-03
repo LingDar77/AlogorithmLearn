@@ -130,7 +130,8 @@ void test005(unsigned len)
 int main()
 {
 	
-	cout << sizeof(LD::Function<void(void)>) << endl;
+	//cout << Problems::FindMajorityElement1({1,2,2}) << endl;
+	cout << Problems::PositiveAQuo({2,23,12,99,32,43}) << endl;
 
 	return 0;
 

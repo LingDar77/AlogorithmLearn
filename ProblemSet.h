@@ -396,18 +396,158 @@ namespace Problems
 		return maxProduct;
 	}
 
-	//No recursion version
-	LL qpow(LL num, LL tim)
+	//required no recursion version
+	LL qpow_norec(LL num, LL index)
 	{
 		LL ret = 0LL;
 		
 
-
-
+		
+		
 		return 0;
 	}
 
+	LL qpow(LL num, LL index)
+	{
+		if (index == 1) return num;//base case
+		else if (index % 2 == 1)   //even case
+		{
+			return qpow(num * num, index / 2) * num;
+		}
+		else					   //odd case
+		{
+			return qpow(num * num, index / 2);
+		}
+	}
 
+	//O(n) O(n)
+	int FindMajorityElement1(const vector<int>& sequence)
+	{
+		map<int, int> table;
+		for (const auto& i : sequence)
+		{
+			++table[i];
+			if (table[i] > sequence.size() / 2) return i;
+		}
+		assert(0);
+		return -1;
+	}
 
+	//Recursion version
+	int FindMajorityElement2(const vector<int>& sequence)
+	{	
+		vector<int> bf;
+		return 0;
+	}
 
+	bool FindXInSortedMatrix(const vector<vector<int>>& matrix, int X)
+	{
+		int N = matrix.size();
+		//base case, if X is lower than the min or the X is greater than max,
+		//then there is no way to exist X
+		if (X > matrix[N - 1][N - 1] || X < matrix[0][0]) return false;
+		
+		int x = 0, y = N - 1;
+		//firstly x pointed matrix[0][0], y pointed matrix[N - 1][N - 1]
+		//if(matrix[y][y] is greater than X,
+		//then X may exist the area from matrix[x][x] to matrix[y][y]
+		while (1)
+		{
+			if (matrix[y][y] > X)
+			{
+				--y;
+			}
+			else if (matrix[y][y] < X)
+			{
+				x = y;
+				++y;
+				break;
+			}
+			else
+			{
+				cout << "(" << y << "," << y << ")" << endl;
+				return 1;
+			}
+		}
+
+		if (matrix[x][x + 1] == X)
+		{
+			cout << "(" << x << "," << x + 1 << ")" << endl;
+			return 1;
+		}
+		if (matrix[y][y - 1] == X)
+		{
+			cout << "(" << y << "," << y - 1 << ")" << endl;
+			return 1;
+		}
+		return 0;
+
+	}
+
+	//Find the max sum/dif/pro/quo of a[j] and a[i] j >= i
+	int PositiveASum(const vector<int>& a)
+	{
+		//can I find tow max value in one loop ? 
+		int first  = 0;
+		int second = 0;
+		for (auto i : a)
+		{
+			if (i > first)
+			{
+				second = first;
+				first = i;
+			}
+			else if (i < first && i > second)
+			{
+				second = i;
+			}
+
+		}
+		return first + second;
+	}
+
+	int PositiveADif(const vector<int>& a)
+	{
+		//can I find the max value and min value in one loop ?
+		int maxValue = INT_MIN;
+		int minValue = INT_MAX;
+		for (auto i : a)
+		{
+			maxValue = max(maxValue, i);
+			minValue = min(minValue, i);
+		}
+		return maxValue - minValue;
+	}
+
+	int PositiveAPro(const vector<int>& a)
+	{
+		int first = 0;
+		int second = 0;
+		for (auto i : a)
+		{
+			if (i > first)
+			{
+				second = first;
+				first = i;
+			}
+			else if (i < first && i > second)
+			{
+				second = i;
+			}
+
+		}
+		return first * second;
+	}
+
+	int PositiveAQuo(const vector<int>& a)
+	{
+		int maxValue = INT_MIN;
+		int minValue = INT_MAX;
+		for (auto i : a)
+		{
+			maxValue = max(maxValue, i);
+			minValue = min(minValue, i);
+		}
+		return maxValue / minValue;
+	}
 }
