@@ -143,9 +143,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AlogoEasy.h" />
+    <ClInclude Include="Functor.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="ProblemSet.h" />
     <ClInclude Include="Structures.h" />
+    <ClInclude Include="TypeTraits.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

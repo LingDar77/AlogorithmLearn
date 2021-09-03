@@ -46,7 +46,7 @@ namespace Alogo {
 			while (index <= Source.size() - Target.size() && i < Target.size())
 			{
 				//cout << i << " " << index << endl;
-				if (Source[index + i] != Target[i])
+				if (Source[size_t(index) + i] != Target[i])
 				{
 					if (map[i] == -1)
 					{

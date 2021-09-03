@@ -32,5 +32,11 @@
     <ClInclude Include="Structures.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="TypeTraits.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Functor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
