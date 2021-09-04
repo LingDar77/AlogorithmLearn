@@ -448,9 +448,8 @@ namespace Problems
 		if (X > matrix[N - 1][N - 1] || X < matrix[0][0]) return false;
 		
 		int x = 0, y = N - 1;
-		//firstly x pointed matrix[0][0], y pointed matrix[N - 1][N - 1]
-		//if(matrix[y][y] is greater than X,
-		//then X may exist the area from matrix[x][x] to matrix[y][y]
+		//Scan the matrix from [y][y] to [0][0] in search of the first place of its diagonal which is lower than X,
+		//then X might exist in the 2x2 matrix
 		while (1)
 		{
 			if (matrix[y][y] > X)
@@ -485,9 +484,10 @@ namespace Problems
 	}
 
 	//Find the max sum/dif/pro/quo of a[j] and a[i] j >= i
+	
 	int PositiveASum(const vector<int>& a)
 	{
-		//can I find tow max value in one loop ? 
+		//Can I find tow max value in one loop ? 
 		int first  = 0;
 		int second = 0;
 		for (auto i : a)
@@ -508,13 +508,26 @@ namespace Problems
 
 	int PositiveADif(const vector<int>& a)
 	{
-		//can I find the max value and min value in one loop ?
+		//Can I find the max value and min value with right indexes in one loop ?
 		int maxValue = INT_MIN;
 		int minValue = INT_MAX;
-		for (auto i : a)
+		for (int i = a.size() - 1, cnt = 0, maxIndex = a.size() - 1; i >= 0 ; --i)
 		{
-			maxValue = max(maxValue, i);
-			minValue = min(minValue, i);
+			if(maxIndex == cnt)
+				break;
+			if (a[i] > maxValue)
+			{
+				maxValue = a[i];
+				maxIndex = i;
+			}
+			else
+			{
+				if (a[cnt] < minValue)
+				{
+					minValue = a[cnt];
+				}
+				++cnt;
+			}
 		}
 		return maxValue - minValue;
 	}
@@ -543,11 +556,26 @@ namespace Problems
 	{
 		int maxValue = INT_MIN;
 		int minValue = INT_MAX;
-		for (auto i : a)
+		for (int i = a.size() - 1, cnt = 0, maxIndex = a.size() - 1; i >= 0; --i)
 		{
-			maxValue = max(maxValue, i);
-			minValue = min(minValue, i);
+			if (maxIndex == cnt)
+				break;
+			if (a[i] > maxValue)
+			{
+				maxValue = a[i];
+				maxIndex = i;
+			}
+			else
+			{
+				if (a[cnt] < minValue)
+				{
+					minValue = a[cnt];
+				}
+				++cnt;
+			}
 		}
 		return maxValue / minValue;
 	}
+
+
 }
