@@ -131,8 +131,11 @@ int main()
 {
 	
 	//cout << Problems::FindMajorityElement1({1,2,2}) << endl;
-	cout << Problems::PositiveADif({2, 23, 12, 99, 32, 43}) << endl;
+	//cout << Problems::PositiveADif({2, 23, 12, 99, 32, 43}) << endl;
 
+	Struct::LinkedList<int> v1 = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+	cout << sizeof(Struct::LinkedList<int>);
 	return 0;
 
 }

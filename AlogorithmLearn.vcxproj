@@ -143,6 +143,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AlogoEasy.h" />
+    <ClInclude Include="Difinitions.h" />
     <ClInclude Include="Functor.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="ProblemSet.h" />
