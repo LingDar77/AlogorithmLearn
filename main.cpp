@@ -133,9 +133,13 @@ int main()
 	//cout << Problems::FindMajorityElement1({1,2,2}) << endl;
 	//cout << Problems::PositiveADif({2, 23, 12, 99, 32, 43}) << endl;
 
-	Struct::LinkedList<int> v1 = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+	Struct::ForwardList<int> v1({ 1, 2, 3, 4 });
+	Struct::ForwardList<int> v2 = move(v1);
 
-	cout << sizeof(Struct::LinkedList<int>);
+	Struct::Stack<int> s1;
+
+
+	cout << v2;
 	return 0;
 
 }
