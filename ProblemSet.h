@@ -309,7 +309,7 @@ namespace Problems
 			for (int j = i + 1; j < sequence.size(); ++j)
 			{
 				bp[i][j] = bp[i][j - 1] + sequence[j];
-				ret = max(ret, bp[i][j]);
+				ret = Max(ret, bp[i][j]);
 			}
 		}
 		return ret;
@@ -332,16 +332,16 @@ namespace Problems
 				for (int i = (int)middle; i >= (int)begin; --i)
 				{
 					leftSum += sequence[i];
-					maxLeftSum = max(maxLeftSum, leftSum);
+					maxLeftSum = Max(maxLeftSum, leftSum);
 				}
 				int rightSum = 0, maxRightSum = 0;
 				for (int i = int(middle + 1); i <= (int)end; ++i)
 				{
 					rightSum += sequence[i];
-					maxRightSum = max(maxRightSum, rightSum);
+					maxRightSum = Max(maxRightSum, rightSum);
 				}
 				//cout << begin << " " << end << " " << left << " " << maxLeftSum << " " << maxRightSum << " " << right << endl;
-				return max(max(left, right), maxLeftSum + maxRightSum);
+				return Max(Max(left, right), size_t(maxLeftSum + maxRightSum));
 			}
 		};
 		return GetMaxSubsequence()(sequence, 0, sequence.size() - 1);
@@ -354,8 +354,8 @@ namespace Problems
 		for (int i = 0; i < sequence.size(); ++i)
 		{
 			thiSum += sequence[i];
-			maxSum = max(thiSum, maxSum);
-			thiSum = max(0, thiSum);
+			maxSum = Max(thiSum, maxSum);
+			thiSum = Max(0, thiSum);
 		}
 		return maxSum;
 	}
@@ -378,8 +378,8 @@ namespace Problems
 		for (int i = 0; i < sequence.size(); ++i)
 		{
 			thiSum += sequence[i];
-			minSum = min(thiSum, minSum);
-			thiSum = min(thiSum, 0);
+			minSum = Min(thiSum, minSum);
+			thiSum = Min(thiSum, 0);
 		}
 		return minSum;
 	}
@@ -390,8 +390,8 @@ namespace Problems
 		for (int  i = 1; i < sequence.size(); ++i)
 		{
 			thisProduct *= sequence[i];
-			maxProduct = max(maxProduct, thisProduct);
-			thisProduct = max(thisProduct, sequence[i]);
+			maxProduct = Max(maxProduct, thisProduct);
+			thisProduct = Max(thisProduct, sequence[i]);
 		}
 		return maxProduct;
 	}
@@ -576,6 +576,11 @@ namespace Problems
 		}
 		return maxValue / minValue;
 	}
+
+	
+
+
+
 
 
 }

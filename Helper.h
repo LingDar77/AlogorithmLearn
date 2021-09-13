@@ -5,11 +5,35 @@
 #include <functional>
 using namespace std;
 using namespace chrono;
-
-#define max(lhs, rhs) (lhs) > (rhs) ? (lhs) : (rhs)
-#define min(lhs, rhs) (lhs) < (rhs) ? (lhs) : (rhs)
-
 typedef long long LL;
+
+
+#define min(lhs, rhs) (lhs) < (rhs) ? (lhs) : (rhs)
+#define max(lhs, rhs) (lhs) > (rhs) ? (lhs) : (rhs)
+
+template<class Type>
+Type Max(Type val)
+{
+	return val;
+}
+
+template<class Type, class... Types>
+Type Max(Type lhs, Types... others)
+{
+	return max(lhs, Max(others...));
+}
+
+template<class Type>
+Type Min(Type val)
+{
+	return val;
+}
+
+template<class Type, class... Types>
+Type Min(Type lhs, Types... others)
+{
+	return min(lhs, Min(others...));
+}
 
 template<class Duration>
 class Timer
@@ -42,3 +66,7 @@ public:
 		time = duration_cast<Duration>(end - start).count();
 	}
 };
+
+
+
+

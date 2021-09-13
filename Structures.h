@@ -2,7 +2,9 @@
 #include <initializer_list>
 #include "Difinitions.h"
 #include <assert.h>
-
+#include <vector>
+#include <string>
+#include <map>
 
 namespace Struct
 {
@@ -11,6 +13,145 @@ namespace Struct
 	/**
 	 * Basic structures
 	 */
+
+	//a universal type that contains numbers and support unlimited calculation.
+	class Number
+	{
+	private:
+		
+		string* digits;
+
+	public:
+
+		explicit Number() noexcept
+			:digits(new string("")) { }
+
+		~Number()
+		{
+			delete digits;
+		}
+
+		
+		//to solve the accuracy problem, I delete the float and double constructor,
+		//instead, read a string as a decimal number to construct a Number,
+		//however, this constructor need to support e and other formats.
+		Number(string&& data)
+			:Number()
+		{
+			//here I decided to implement with a state machine
+			/** State transportation table 
+			 * State		+/-			Integer			e/E			.				End
+			 * Start(0)		Symbol(1)   Integer(2)		Index(4)	Decimal(3)		End(5)
+			 * Symbol(1)	End(5)		Integer(2)		Index(4)	Decimal(3)		End(5)
+			 * Integer(2)   End(5)		Integer(2)		Index(4)	Decimal(3)		End(5)
+			 * Decimal(3)   End(5)		Decimal(3)		End(5)		End(5)			End(5)
+			 * Index(4)		End(5)		Index(4)		End(5)		End(5)			End(5)
+			 * End(5)		End(5)		End(5)			End(5)		End(5)			End(5)
+			 */
+
+			vector<vector<int>> stateTable = { { 1, 2, 4, 3, 5 }, //Start
+											   { 5, 2, 4, 3, 5 }, //Symbol
+											   { 5, 2, 4, 3, 5 }, //Integer
+											   { 5, 3, 5, 5, 5 }, //Decimal
+											   { 5, 4, 5, 5, 5 }, //Index
+											   { 5, 5, 5, 5, 5 }  //End
+											 };
+			
+			int currState = 0;
+			string pow = "";
+			for (int i = 0; i != data.size(); ++i)
+			{
+				char c = data[i];
+				if (c == '+' || c == '-')
+				{//Symbol
+					currState = stateTable[currState][0];
+				}
+				else if (c <= '9' && c >= '0')
+				{//Integer
+					currState = stateTable[currState][1];
+				}
+				else if (c == 'e' || c == 'E')
+				{//Index
+					currState = stateTable[currState][2];
+					
+				}
+				else if (c == '.')
+				{//Decimal
+					currState = stateTable[currState][3];
+				}
+				else
+					currState = 5;
+
+				switch (currState)
+				{
+				case 1:
+
+					digits->push_back(c == '-' ? '-' : '+');
+					break;
+
+				case 2:
+					if(digits->size() == 0 && c != '0')
+						digits->push_back(c);
+					else if((*(digits->end() - 1) == '-' || *(digits->end() - 1) == '+') && c == '0')
+						break;
+					else if(*(digits->end() - 1) != '0')
+						digits->push_back(c);
+					break;
+
+				case 3:
+
+					digits->push_back(c);
+					break;
+
+				case 4:
+					
+					
+					break;
+				default:
+					break;
+				}
+				
+				if ((i != data.size() - 1 && currState == 5) || (i == data.size() - 1 && *(digits->end() - 1) == '.'))
+					assert(0);
+				else if(currState == 5)
+					break;
+			}
+											 
+
+		}
+
+		Number(double&&) = delete;
+		Number(float&&) = delete;
+
+		//for integers
+		template<class Type>
+		Number(Type&& data)
+			:Number()
+		{
+			if (data > 0)
+			{
+				digits->push_back('+');
+			}
+			else if (data < 0)
+			{
+				digits->push_back('-');
+				data = -1 * data;
+			}
+			else
+			{
+				digits->push_back('0');
+				return;
+			}
+
+			while (data)
+			{
+				Type digit = data % 10;
+				data /= 10;
+				digits->insert(digits->begin() + 1, '0' + digit);
+			}
+		}
+
+	};
 
 	class BitMap
 	{
@@ -56,8 +197,8 @@ namespace Struct
 
 	private:
 
-		Type*  content  = nullptr;
-		size_t size     = 0;
+		Type*  content  = nullptr	 ;
+		size_t size     = 0			 ;
 		size_t capacity = MINCAPACITY;
 
 	public:
@@ -65,7 +206,7 @@ namespace Struct
 		typedef Type*		Iterator;
 		typedef const Type* ConstIterator;
 
-		explicit Vector(size_t size)
+		explicit Vector(size_t size = MINCAPACITY)
 		{
 			if (size <= Capacity())
 			{
@@ -255,19 +396,8 @@ namespace Struct
 			return *(content + sz);
 		}
 
+		
 	};
-
-	template<class Type>
-	ostream& operator<<(ostream& os, const Vector<Type>& target)
-	{
-		if (target.Size() == 0) return os;
-		os << target.operator[](0);
-		for (int i = 1; i < target.Size(); ++i)
-		{
-			os << "," << target.operator[](i);
-		}
-		return os << endl;
-	}
 
 	template<class Type>
 	class LinkedList
@@ -282,12 +412,12 @@ namespace Struct
 			Node* next;
 
 			explicit Node()
-				:value(NULL), prev(nullptr), next(nullptr){ }
+				:value(NULL), prev(nullptr), next(nullptr) { }
 
 			Node(const Type& value, Node* prev = nullptr, Node* next = nullptr)
 				:value(value), prev(prev), next(next)
 			{
-				if(next)
+				if (next)
 					next->prev = this;
 				if (prev)
 					prev->next = this;
@@ -296,10 +426,10 @@ namespace Struct
 			Node(Type&& value, Node* prev = nullptr, Node* next = nullptr)
 				:value(move(value)), prev(prev), next(next)
 			{
-				if (prev)
-					prev->next = this;
 				if (next)
 					next->prev = this;
+				if (prev)
+					prev->next = this;
 			}
 		};
 
@@ -318,12 +448,12 @@ namespace Struct
 			}
 
 			explicit ConstIterator(Node* p) noexcept
-				:cur(p){ }
+				:cur(p) { }
 
 		public:
 
 			ConstIterator() noexcept
-				:cur(nullptr){ }
+				:cur(nullptr) { }
 
 			const Type& operator*() const
 			{
@@ -396,8 +526,8 @@ namespace Struct
 		protected:
 
 			Iterator(Node* p)
-				:ConstIterator(p){ }
-		
+				:ConstIterator(p) { }
+
 		public:
 
 			Iterator& operator++()
@@ -460,9 +590,9 @@ namespace Struct
 		};
 
 	private:
-		
-		Node*  head = nullptr;
-		Node*  tail = nullptr;
+
+		Node* head = nullptr;
+		Node* tail = nullptr;
 		size_t size = 0;
 
 	private:
@@ -476,7 +606,7 @@ namespace Struct
 			tail->prev = head;
 			size = 0;
 		}
-		
+
 		Type DeleteNode(Node* node)
 		{
 			auto prevNode = node->prev;
@@ -490,8 +620,8 @@ namespace Struct
 		}
 
 	public:
-		
-	 	explicit LinkedList(){ }
+
+		explicit LinkedList() { Init(); }
 
 		LinkedList(LinkedList&& rhs) noexcept
 		{
@@ -611,6 +741,16 @@ namespace Struct
 			return Iterator(head->next);
 		}
 
+		const ConstIterator Head() const
+		{
+			return ConstIterator(head);
+		}
+
+		Iterator Head()
+		{
+			return Iterator(head);
+		}
+
 		const ConstIterator End() const
 		{
 			return ConstIterator(tail);
@@ -623,7 +763,7 @@ namespace Struct
 
 		Type& operator[](size_t index)
 		{
-			size_t back  = size - index;
+			size_t back = size - index;
 			if (index < back)
 			{
 				auto It = Begin();
@@ -690,26 +830,6 @@ namespace Struct
 		}
 
 	};
-
-	template<class Type>
-	ostream& operator<<(ostream& os, const LinkedList<Type>& list)
-	{
-		auto it  = list.Begin();
-		auto end = list.End();
-
-		if (it == end) return os;
-
-		os << *it;
-		++it;
-
-		while (it != end)
-		{
-			os << "," << *it;
-			++it;
-		}
-
-		return os << endl;
-	}
 
 	template<class Type>
 	class ForwardList
@@ -867,12 +987,12 @@ namespace Struct
 
 		public:
 
-			Type* operator*()
+			Type& operator*()
 			{
 				return this->Retrieve();
 			}
 
-			const Type* operator*() const
+			const Type& operator*() const
 			{
 				return ConstIterator::operator*();
 			}
@@ -1016,6 +1136,16 @@ public:
 			return ConstIterator(this, head->next);
 		}
 
+		Iterator Head()
+		{
+			return Iterator(this, head);
+		}
+
+		const ConstIterator Head() const
+		{
+			return ConstIterator(this, head);
+		}
+
 		Iterator End()
 		{
 			return Iterator(this, head);
@@ -1074,7 +1204,7 @@ public:
 
 		void PushBack(const Type& value)
 		{
-			curr->Node = new Node(value, head);
+			curr->next = new Node(value, head);
 			curr = curr->next;
 			++size;
 		}
@@ -1104,74 +1234,540 @@ public:
 	
 		void Insert(Iterator it, const Type& value)
 		{
-			auto beg = Begin();
-			while (beg + 1 != it)
-			{
-				++beg;
-			}
-			beg.curr->next = new Node(value, it.curr);
+			auto val = *it;
+			*it = value;
+			it.curr->next = new Node(val, it.curr->next);
 			++size;
 		}
 
 		void Insert(Iterator it, Type&& value)
 		{
-			auto beg = Begin();
-			while (beg + 1 != it)
-			{
-				++beg;
-			}
-			beg.curr->next = new Node(move(value), it.curr);
+			auto val = *it;
+			*it = move(value);
+			it.curr->next = new Node(val, it.curr->next);
 			++size;
 		}
 
 		void Insert(size_t index, const Type& value)
 		{
-			auto beg = head;
-			for (int i = 0; i < index; ++i)
-			{
-				beg = beg->next;
-			}
-			beg->next = new Node(value, beg->next);
-			++size;
+			return Insert(Begin() + index, value);
 		}
 
 		void Insert(size_t index, Type&& value)
 		{
-			auto beg = head;
-			for (int i = 0; i < index; ++i)
-			{
-				beg = beg->next;
-			}
-			beg->next = new Node(move(value), beg->next);
-			++size;
+			return Insert(Begin() + index, value);
 		}
 
 		void Erase(Iterator it)
 		{
-			auto beg = Begin();
-			while (beg + 1 != it)
-			{
-				++beg;
-			}
+			auto next = it + 1;
+			*it = *next;
+			it.curr->next = next.curr->next;
+			delete next.curr;
 			--size;
-			beg.curr->next = it.curr->next;
-			delete it.curr;
+			
 		}
 
 		void Erase(size_t index)
 		{
-			auto beg = head;
-			for (int i = 0; i < index; ++i)
-			{
-				beg = beg->next;
-			}
-			--size;
-			auto n = beg->next;
-			beg->next = n->next;
-			delete n;
+			Erase(Begin() + index);
 		}
 
 };
+
+	/**
+	 * Collections based on basic structures
+	 */
+
+	template<class Type, template<class> class Container = ForwardList>
+	class Stack
+	{
+	private:
+
+		Container<Type>* content;
+
+	public:
+
+		explicit Stack() noexcept
+			:content(new Container<Type>()) { }
+
+		~Stack()
+		{
+			delete content;
+		}
+
+		Stack(const initializer_list<Type>& data)
+			:Stack()
+		{
+			for(int i = 0; i < data.size(); ++i)
+				content->PushFront(*(data.begin() + i));
+		}
+
+		Stack(const Stack& rhs)
+			:Stack()
+		{
+			auto newContent = new Container<Type>(*rhs.content);
+			swap(content, newContent);
+		}
+
+		Stack(Stack&& rhs)
+			:Stack()
+		{
+			swap(content, rhs.content);
+		}
+
+		const Type& Top() const
+		{
+			return *content->Begin();
+		}
+
+		Type& Top()
+		{
+			return *content->Begin();
+		}
+
+		Type Pop()
+		{
+			return content->PopFront();
+		}
+
+		void Push(Type&& value)
+		{
+			content->PushFront(value);
+		}
+
+		void Push(const Type& value)
+		{
+			content->PushFront(value);
+		}
+
+		size_t Size() const
+		{
+			return content->Size();
+		}
+
+		bool IsEmpty() const
+		{
+			return content->IsEmpty();
+		}
+
+		void Clear()
+		{
+			return content->Clear();
+		}
+	};
+
+	template<class Type, template<class> class Container = ForwardList>
+	class Queue
+	{
+	private:
+
+		Container<Type>* content;
+
+	public:
+
+		Queue()
+			:content(new Container<Type>()) { }
+
+		~Queue()
+		{
+			delete content;
+		}
+
+		Queue(initializer_list<Type> data)
+			:Queue()
+		{
+			for (auto beg = data.begin(); beg != data.end(); ++beg)
+			{
+				content->PushBack(*beg);
+			}
+		}
+
+		Queue(const Queue& rhs)
+			:Queue()
+		{
+			auto newContent = new Container<Type>(*rhs.content);
+			swap(newContent, content);
+		}
+
+		Queue(Queue&& rhs)
+			:Queue()
+		{
+			swap(content, rhs.content);
+		}
+
+		Type Dequeue()
+		{
+			return content->PopFront();
+		}
+
+		void Enqueue(const Type& value)
+		{
+			return content->PushBack(value);
+		}
+
+		void Enqueue(Type&& value)
+		{
+			return content->PushBack(value);
+		}
+
+		const Type& Front() const
+		{
+			return *content->Begin();
+		}
+
+		size_t Size() const
+		{
+			return content->Size();
+		}
+
+		bool IsEmpty() const
+		{
+			return content->IsEmpty();
+		}
+
+	};
+
+	template<class Type, template<class> class Container = LinkedList>
+	class Deque
+	{
+	private:
+
+		Container<Type>* content;
+
+	public:
+
+		Deque()
+			:content(new Container<Type>()) { }
+
+		~Deque()
+		{
+			delete content;
+		}
+
+		Deque(const initializer_list<Type>& data)
+			:Deque()
+		{
+			for (auto beg = data.begin(); beg != data.end(); ++beg)
+			{
+				content->PushBack(*beg);
+			}
+		}
+
+		Deque(const Deque& rhs)
+			:Deque()
+		{
+			auto newContent = new Container<Type>(*rhs.content);
+			swap(content, newContent);
+		}
+
+		Deque(Deque&& rhs)
+			:Deque()
+		{
+			swap(rhs.content, content);
+		}
+
+		Type Pop()
+		{
+			return content->PopFront();
+		}
+
+		void Push(const Type& val)
+		{
+			return content->PushFront(val);
+		}
+
+		void Push(Type&& val)
+		{
+			return content->PushFront(val);
+		}
+
+		void Inject(const Type& val)
+		{
+			return content->PushBack(val);
+		}
+
+		void Inject(Type&& val)
+		{
+			return content->PushBack(val);
+		}
+
+		Type Eject()
+		{
+			return content->PopBack();
+		}
+
+
+
+	};
+
+	template<class Type>
+	class BinaryTree
+	{
+		template<class Type> friend ostream& operator<<(ostream& os, const BinaryTree<Type>& tree);
+	private:
+
+		struct TreeNode
+		{
+
+			Type	  value;
+			TreeNode* left;
+			TreeNode* right;
+
+			explicit TreeNode(Type value = NULL, TreeNode* left = nullptr, TreeNode* right = nullptr) noexcept
+				:value(value), left(left), right(right) { }
+
+		};
+
+	private:
+
+		static void DoClear(TreeNode* root)
+		{
+			if (root)
+			{
+				if (root->left)
+					DoClear(root->left);
+				if (root->right)
+					DoClear(root->right);
+				delete root;
+			}
+		}
+
+		//Copy a tree from a root node to another root node
+		static TreeNode* CpyTree(TreeNode* destinationRoot, TreeNode* resourceRoot)
+		{
+			destinationRoot->value = resourceRoot->value;
+			if(resourceRoot->left)
+			{
+				destinationRoot->left = CpyTree(new TreeNode(), resourceRoot->left);
+			}
+			if (resourceRoot->right)
+			{
+				destinationRoot->right = CpyTree(new TreeNode(), resourceRoot->right);
+			}
+				return destinationRoot;
+		}
+		
+		static TreeNode* DeepthFirstSearch(TreeNode* root, const Type& value)
+		{
+			if (!root) return nullptr;
+			if (root->value == value) return root;
+
+			if (root->left)
+			{
+				auto leftRet = DeepthFirstSearch(root->left, value);
+				if (leftRet) return leftRet;
+			}
+			if (root->right)
+			{
+				auto rightRet = DeepthFirstSearch(root->right, value);
+				if (rightRet) return rightRet;
+			}
+			return nullptr;
+
+		}
+
+		static TreeNode* BreadthFirstSearch(TreeNode* root, const Type& value)
+		{
+			assert(root);
+			Queue<TreeNode*> queue;
+			queue.Enqueue(root);
+			while (!queue.IsEmpty())
+			{
+				TreeNode* curr = queue.Dequeue();
+				if (curr->left) queue.Enqueue(curr->left);
+				if (curr->right) queue.Enqueue(curr->right);
+				if (curr->value == value) return curr;
+			}
+			return nullptr;
+
+		}
+
+		//make sure that the result node is not complete
+		static TreeNode* FindHighestLeaf(TreeNode* root)
+		{
+			Queue<TreeNode*> queue;
+			queue.Enqueue(root);
+			while (!queue.IsEmpty())
+			{
+				auto node = queue.Dequeue();
+				if (!node->left || !node->right) return node;
+				else
+				{
+					if(node->left)
+						queue.Enqueue(node->left);
+					if (node->right)
+						queue.Enqueue(node->right);
+				}
+			}
+			return nullptr;
+		}
+
+
+	private:
+
+		TreeNode* root;
+		size_t	  size;
+
+	public:
+
+		explicit BinaryTree() noexcept
+			:root(new TreeNode()), size(0)
+		{ }
+
+		~BinaryTree()
+		{
+			DoClear(root);
+		}
+
+		BinaryTree(const initializer_list<Type>& data)
+			:BinaryTree()
+		{
+			Queue<TreeNode*> roots;
+			roots.Enqueue(root);
+			for (auto& i : data)
+			{
+				TreeNode* front = roots.Front();
+				if (front->left && front->right)
+					roots.Dequeue();
+				front = roots.Front();
+
+				TreeNode* node = new TreeNode(i);
+				roots.Enqueue(node);
+				if (!front->left)
+				{
+					front->left = node;
+				}
+				else if (!front->right)
+				{
+					front->right = node;
+				}
+			}
+			size = data.size();
+			
+
+		}
+
+		BinaryTree(const BinaryTree& rhs)
+			:BinaryTree()
+		{
+			size = rhs.size;
+			CpyTree(root, rhs.root);
+		}
+
+		BinaryTree(BinaryTree&& rhs)
+			:BinaryTree()
+		{
+			swap(rhs.root, root);
+			swap(rhs.size, size);
+		}
+
+		void Clear()
+		{
+			DoClear(root->left);
+			DoClear(root->right);
+			size = 0;
+		}
+		
+		size_t Size() const noexcept
+		{
+			return size;
+		}
+
+		const TreeNode* DFS(Type value) const
+		{
+			return DeepthFirstSearch(root, value);
+		}
+
+		const TreeNode* BFS(Type value) const
+		{
+			return BreadthFirstSearch(root, value);
+		}
+
+		void Add(const Type& value)
+		{
+			auto node = FindHighestLeaf(root);
+			if (!node->left)
+			{
+				node->left = new TreeNode(value);
+			}
+			else
+			{
+				node->right = new TreeNode(value);
+			}
+			++size;
+		}
+
+		void Add(Type&& value)
+		{
+			auto node = FindHighestLeaf(root);
+			if (!node->left)
+			{
+				node->left = new TreeNode(move(value));
+			}
+			else
+			{
+				node->right = new TreeNode(move(value));
+			}
+			++size;
+		}
+
+		void Remove(const Type& value)
+		{
+
+		}
+
+		void Remove(Type&& value)
+		{
+			
+			auto ret = WidthFirstSearch(root, value);
+			if (ret)
+			{
+				--size;
+
+			}
+			
+			
+		}
+
+
+	};
+
+
+
+	//Operation Methods
+
+	template<class Type>
+	ostream& operator<<(ostream& os, const Vector<Type>& target)
+	{
+		if (target.Size() == 0) return os;
+		os << target.operator[](0);
+		for (int i = 1; i < target.Size(); ++i)
+		{
+			os << "," << target.operator[](i);
+		}
+		return os << endl;
+	}
+
+	template<class Type>
+	ostream& operator<<(ostream& os, const LinkedList<Type>& list)
+	{
+		auto it = list.Begin();
+		auto end = list.End();
+
+		if (it == end) return os;
+
+		os << *it;
+		++it;
+
+		while (it != end)
+		{
+			os << "," << *it;
+			++it;
+		}
+
+		return os << endl;
+	}
 
 	template<class Type>
 	ostream& operator<<(ostream& os, const ForwardList<Type>& list)
@@ -1189,14 +1785,99 @@ public:
 		return os;
 	}
 
-	/**
-	 * Collections based on basic structures
-	 */
-
-	template<class Type, template<class Type> class Container = ForwardList>
-	class Stack
+	template<class Type>
+	ostream& operator<<(ostream& os, const BinaryTree<Type>& tree)
 	{
+		/**
+		 *  Overall, we need to know which level the current element belongs to,
+		 *	so that we can know how to set the align.
+		 *	first, let the height of the tree be variable h,
+		 *  absolutely, the nth level has 2^(n - 1) elements(containing null),
+		 *	we have to know the max length of each element, 
+		 *  now let it be variable l,
+		 */
+		//Stored the nodes in every level, containing nullptr
 
-	};
+#ifndef MaxElementLength
+#define MaxElementLength 3
+#endif
+		int l = MaxElementLength;
+		map<int, vector<BinaryTree<Type>::TreeNode*>> nodes;
+
+		//Initializing the node map
+		Queue<BinaryTree<Type>::TreeNode*> queue;
+		queue.Enqueue(tree.root);
+		int nodeCnt   = 0;
+		int maxNodes  = 1;
+		int currLevel = 0;
+		int nullCnt   = 0;
+		while (1)
+		{
+			auto curr = queue.Dequeue();
+			nodes[currLevel].push_back(curr);
+			nodes[currLevel + 1].push_back(curr ? curr->left: nullptr);
+			nodes[currLevel + 1].push_back(curr ? curr->right : nullptr);
+			queue.Enqueue(curr->left);
+			queue.Enqueue(curr->right);
+
+			++nodeCnt;
+			if (nullCnt == maxNodes * 2)
+			{
+				break;
+			}
+			if (nodeCnt == maxNodes)
+			{
+				++currLevel;
+				maxNodes *= 2;
+				nodeCnt = 0;
+				nullCnt = 0;
+			}
+		}
+
+
+		int h = nodes.size();
+		//before doing this, we'd better keep l a odd number;
+		int metaL = (l + 1) / 2;
+
+		//Stored the number of space bar of every level should have
+		vector<int> SpaceBarMap(h, 1);
+		//Stored the length of alignment of every level
+		vector<int> AlginmentMap(h, 0);
+		//Initializing the two maps
+		for (int i = h - 2; i >= 0; --i)
+		{
+			AlginmentMap[i] = AlginmentMap[i + 1] * 2 + l;
+			SpaceBarMap[i] = metaL * (2 * SpaceBarMap[i + 1] + 1);
+		}
+
+
+
+		return os;
+	}
+
+
+
+
+	template<class Iterator, class Type>
+	Iterator Find(Iterator begin, Iterator end, const Type& target)
+	{
+		while (begin != end)
+		{
+			if (*begin == target) return begin;
+			++begin;
+		}
+		return begin;
+	}
+
+	template<class Iterator, class Type>
+	Iterator Find(Iterator begin, Iterator end, Type&& target)
+	{
+		while (begin != end)
+		{
+			if (*begin == target) return begin;
+			++begin;
+		}
+		return begin;
+	}
 
 }

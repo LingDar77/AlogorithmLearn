@@ -155,7 +155,8 @@ namespace LD
 
 
 	/*
-	 * a sloppy imitation of std::function
+	 * a sloppy imitation of std::function,
+	 * which seems not to support reference type
 	 */
 	template<class Type>
 	class Function{ };
