@@ -1802,10 +1802,10 @@ public:
 #define MaxElementLength 3
 #endif
 		int l = MaxElementLength;
-		map<int, vector<BinaryTree<Type>::TreeNode*>> nodes;
+		map<int, vector<typename BinaryTree<Type>::TreeNode*>> nodes;
 
 		//Initializing the node map
-		Queue<BinaryTree<Type>::TreeNode*> queue;
+		Queue<typename BinaryTree<Type>::TreeNode*> queue;
 		queue.Enqueue(tree.root);
 		int nodeCnt   = 0;
 		int maxNodes  = 1;
@@ -1817,8 +1817,8 @@ public:
 			nodes[currLevel].push_back(curr);
 			nodes[currLevel + 1].push_back(curr ? curr->left: nullptr);
 			nodes[currLevel + 1].push_back(curr ? curr->right : nullptr);
-			queue.Enqueue(curr->left);
-			queue.Enqueue(curr->right);
+			queue.Enqueue(curr ? curr->left : nullptr);
+			queue.Enqueue(curr ? curr->right : nullptr);
 
 			++nodeCnt;
 			if (nullCnt == maxNodes * 2)
