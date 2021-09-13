@@ -1815,10 +1815,17 @@ public:
 		{
 			auto curr = queue.Dequeue();
 			nodes[currLevel].push_back(curr);
-			nodes[currLevel + 1].push_back(curr ? curr->left: nullptr);
-			nodes[currLevel + 1].push_back(curr ? curr->right : nullptr);
-			queue.Enqueue(curr ? curr->left : nullptr);
-			queue.Enqueue(curr ? curr->right : nullptr);
+			if (curr)
+			{
+				queue.Enqueue(curr->left);
+				queue.Enqueue(curr->right);
+			}
+			else
+			{
+				queue.Enqueue(nullptr);
+				queue.Enqueue(nullptr);
+				nullCnt += 2;
+			}
 
 			++nodeCnt;
 			if (nullCnt == maxNodes * 2)
