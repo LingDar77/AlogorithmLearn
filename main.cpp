@@ -135,13 +135,14 @@ int main()
 
 	Struct::ForwardList<int> v1({ 1, 2, 3, 4 });
 	Struct::ForwardList<int> v2 = move(v1);
-	Struct::BinaryTree<int> bt1 = {1, 2, 3, 4};
+	Struct::BinaryTree<int> bt1 = {111, 222, 333, 444,
+								   555, 666, 777, 888, 999, 123};
 
 	auto bt2 = bt1;
 	bt2.Add(12);
 
 
-	cout << bt1 << endl;
+	cout << bt2 << endl;
 
 	return 0;
 

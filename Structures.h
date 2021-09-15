@@ -1623,16 +1623,19 @@ public:
 		BinaryTree(const initializer_list<Type>& data)
 			:BinaryTree()
 		{
+			assert(data.size());
 			Queue<TreeNode*> roots;
 			roots.Enqueue(root);
-			for (auto& i : data)
+			root->value = *(data.begin());
+			++size;
+			for (int i = 1; i < data.size(); ++i)
 			{
 				TreeNode* front = roots.Front();
 				if (front->left && front->right)
 					roots.Dequeue();
 				front = roots.Front();
 
-				TreeNode* node = new TreeNode(i);
+				TreeNode* node = new TreeNode(*(data.begin() + i));
 				roots.Enqueue(node);
 				if (!front->left)
 				{
@@ -1686,6 +1689,12 @@ public:
 
 		void Add(const Type& value)
 		{
+			if (!size)
+			{
+				root->value = value;
+				++size;
+				return;
+			}
 			auto node = FindHighestLeaf(root);
 			if (!node->left)
 			{
@@ -1700,6 +1709,12 @@ public:
 
 		void Add(Type&& value)
 		{
+			if (!size)
+			{
+				root->value = move(value);
+				++size;
+				return;
+			}
 			auto node = FindHighestLeaf(root);
 			if (!node->left)
 			{
@@ -1785,6 +1800,10 @@ public:
 		return os;
 	}
 
+	//In order to control the element length that printed on screen,
+	//you can define the macro MAXELEMENTLENGTH to control the probable length in your btree,
+	//this macro will be defined as 3 if you ignore it,
+	//but this value better be a odd number 
 	template<class Type>
 	ostream& operator<<(ostream& os, const BinaryTree<Type>& tree)
 	{
@@ -1798,49 +1817,50 @@ public:
 		 */
 		//Stored the nodes in every level, containing nullptr
 
-#ifndef MaxElementLength
-#define MaxElementLength 3
+#ifndef MAXELEMENTLENGTH
+#define MAXELEMENTLENGTH 3
 #endif
-		int l = MaxElementLength;
+		int l = MAXELEMENTLENGTH;
 		map<int, vector<typename BinaryTree<Type>::TreeNode*>> nodes;
 
 		//Initializing the node map
-		Queue<typename BinaryTree<Type>::TreeNode*> queue;
-		queue.Enqueue(tree.root);
-		int nodeCnt   = 0;
-		int maxNodes  = 1;
-		int currLevel = 0;
-		int nullCnt   = 0;
-		while (1)
 		{
-			auto curr = queue.Dequeue();
-			nodes[currLevel].push_back(curr);
-			if (curr)
-			{
-				queue.Enqueue(curr->left);
-				queue.Enqueue(curr->right);
-			}
-			else
-			{
-				queue.Enqueue(nullptr);
-				queue.Enqueue(nullptr);
-				nullCnt += 2;
-			}
-
-			++nodeCnt;
-			if (nullCnt == maxNodes * 2)
-			{
-				break;
-			}
-			if (nodeCnt == maxNodes)
-			{
-				++currLevel;
-				maxNodes *= 2;
-				nodeCnt = 0;
-				nullCnt = 0;
-			}
+		Queue<typename BinaryTree<Type>::TreeNode*> queue;
+				queue.Enqueue(tree.root);
+				int nodeCnt   = 0;
+				int maxNodes  = 1;
+				int currLevel = 0;
+				int nullCnt   = 0;
+				while (1)
+				{
+					auto curr = queue.Dequeue();
+					nodes[currLevel].push_back(curr);
+					if (curr)
+					{
+						queue.Enqueue(curr->left);
+						queue.Enqueue(curr->right);
+					}
+					else
+					{
+						queue.Enqueue(nullptr);
+						queue.Enqueue(nullptr);
+						nullCnt += 2;
+					}
+		
+					++nodeCnt;
+					if (nullCnt == maxNodes * 2)
+					{
+						break;
+					}
+					if (nodeCnt == maxNodes)
+					{
+						++currLevel;
+						maxNodes *= 2;
+						nodeCnt = 0;
+						nullCnt = 0;
+					}
+				}
 		}
-
 
 		int h = nodes.size();
 		//before doing this, we'd better keep l a odd number;
@@ -1853,17 +1873,51 @@ public:
 		//Initializing the two maps
 		for (int i = h - 2; i >= 0; --i)
 		{
-			AlginmentMap[i] = AlginmentMap[i + 1] * 2 + l;
-			SpaceBarMap[i] = metaL * (2 * SpaceBarMap[i + 1] + 1);
+			AlginmentMap[i] = 2 * AlginmentMap[i + 1] + 1;
+			SpaceBarMap[i] = (SpaceBarMap[i + 1]) * 2 + l;
+			AlginmentMap[i + 1] *= metaL;
+		}
+		AlginmentMap[0] *= metaL;
+
+
+		//Finally print the whole tree with the help of these maps
+		for (int level = 0; level < h; ++ level)
+		{
+			for (int al = 0; al < AlginmentMap[level]; ++al)
+			{
+				os << " ";
+			}
+			for (int ele = 0; ele < nodes[level].size(); ++ele)
+			{
+				if (nodes[level][ele])
+				{//if I can know the length of printing element,
+				 //I can justify the length to make every element the same length.
+					os << nodes[level][ele]->value;
+					auto lEle = GetLenOfElement(nodes[level][ele]->value);
+					if (lEle < l || lEle != 0)
+					{
+						for (int i = 0; i < l - lEle; ++i)
+						{
+							os << " ";
+						}
+					}
+				}
+				else
+				{
+					os << "NOE";
+				}
+				for (int sp = 0; sp < SpaceBarMap[level]; ++sp)
+				{
+					os << " ";
+				}
+			}
+			os << endl;
 		}
 
 
 
 		return os;
 	}
-
-
-
 
 	template<class Iterator, class Type>
 	Iterator Find(Iterator begin, Iterator end, const Type& target)

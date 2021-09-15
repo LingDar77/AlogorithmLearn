@@ -68,5 +68,35 @@ public:
 };
 
 
+template<class Type>
+size_t GetLenOfElement(Type ele)
+{
+	return 0;
+}
 
+size_t GetLenOfElement(int ele)
+{
+	int cnt = 0;
+	if (ele > 0)
+	{
+		while (ele)
+		{
+			++cnt;
+			ele /= 10;
+		}
+		return cnt;
+	}
+	else if (ele < 0)
+	{
+		ele *= -1;
+		while (ele)
+		{
+			++cnt;
+			ele /= 10;
+		}
+		return cnt + 1;
+	}
+	else
+		return 1;
+}
 
