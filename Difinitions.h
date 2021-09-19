@@ -7,3 +7,5 @@ typedef long long LL;
 typedef unsigned char uchar;
 typedef unsigned long ulong;
 typedef unsigned long long ullong;
+
+#define elif(Expression) else if((Expression))

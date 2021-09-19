@@ -6,17 +6,18 @@
 #include "ProblemSet.h"
 #include "Structures.h"
 #include "Functor.h"
+#include <list>
 using namespace std;
 
-void test001(			 )
+void test001(		 )
 {
 	cout << Alogo::CountPrimes_EulerSieve(100000) << endl;
 }
-void test002(			 )
+void test002(		 )
 {
 	cout << Alogo::CountPrimes_EratosthenesSieve(100000) << endl;
 }
-void test003(			 )
+void test003(		 )
 {
 	function<int(long long)> mod   = [](long long n)
 	{
@@ -54,7 +55,7 @@ void test003(			 )
 	cout << Timer<milliseconds>(digit, 10000000000).time << "ms" << endl;
 
 }
-void test004(			 )
+void test004(		 )
 {
 	class tClass
 	{
@@ -103,7 +104,7 @@ void test004(			 )
 	c2 = move(c1);
 
 }
-void test005(unsigned len)
+void test005(uint len)
 {
 	vector<int> sequence(len);
 	for (unsigned i = 0; i < len; ++i)
@@ -126,24 +127,130 @@ void test005(unsigned len)
 	//cout << Timer<milliseconds>(f2).time << "ms" << endl; //too slow
 	cout << Timer<milliseconds>(f3).time << "ms" << endl;
 }
+void test006(uint len)
+{
+	function<void(void)> f = [&]()
+	{
+		Struct::BinaryTree<int> bt1;
+		for (int i = 0; i < len; ++i)
+		{
+			bt1.Add(i);
+		}
+#define MAXELEMENTLENGTH 6;
+		cout << bt1 << endl;
+	};
+	cout << "Adding " << len << " element(s) to a binary tree costs " << Timer<milliseconds>(f).time  << " ms." << endl;
+	
+}
+void test007(uint len)
+{
+
+	Struct::CachedForwardList<int> l1;
+	list<int> l2;
+	//PushBack Elements
+		cout << "PushBack  " << len << " times took " 
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0;i < len; ++i)
+			{
+				l1.PushBack(rand());
+			}
+			}).time 
+			<< " ms in CachedForwardList" << endl;
+
+		cout << "PushBack  " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l2.push_back(rand());
+			}
+				}).time
+			<< " ms in list" << endl;
+	//PushFront Elements
+		cout << "PushFront " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l1.PushFront(rand());
+			}
+			}).time
+			<< " ms in CachedForwardList" << endl;
+
+		cout << "PushFront " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l2.push_front(rand());
+			}
+			}).time
+			<< " ms in list" << endl;
+	//PopBack Elements
+		cout << "PopBack   " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l1.PopBack();
+			}
+				}).time
+			<< " ms in CachedForwardList" << endl;
+
+		cout << "PopBack   " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l2.pop_back();
+			}
+				}).time
+			<< " ms in list" << endl;
+	//PopFront Elements
+		cout << "PopFront  " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l1.PopFront();
+			}
+			}).time
+			<< " ms in CachedForwardList" << endl;
+
+		cout << "PopFront  " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l2.pop_front();
+			}
+			}).time
+			<< " ms in list" << endl;
+
+	//Insert Middle Elements
+		cout << "Insert    " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l1.Insert(i / 2, rand());
+			}
+				}).time
+			<< " ms in CachedForwardList" << endl;
+
+		cout << "Insert    " << len << " times took "
+			<< Timer<milliseconds>([&]() {
+			for (uint i = 0; i < len; ++i)
+			{
+				l2.insert(l2.begin(), rand());
+			}
+			}).time
+			<< " ms in list" << endl;
+	//Remove Middle Elements
+
+	
+	
+}
+
+
 
 int main()
 {
+	test007(10000);
+
 	
-	//cout << Problems::FindMajorityElement1({1,2,2}) << endl;
-	//cout << Problems::PositiveADif({2, 23, 12, 99, 32, 43}) << endl;
-
-	Struct::ForwardList<int> v1({ 1, 2, 3, 4 });
-	Struct::ForwardList<int> v2 = move(v1);
-	Struct::BinaryTree<int> bt1 = {111, 222, 333, 444,
-								   555, 666, 777, 888, 999, 123};
-
-	auto bt2 = bt1;
-	bt2.Add(12);
-
-
-	cout << bt2 << endl;
-
 	return 0;
 
 }

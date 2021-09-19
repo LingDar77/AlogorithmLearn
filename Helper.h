@@ -12,25 +12,25 @@ typedef long long LL;
 #define max(lhs, rhs) (lhs) > (rhs) ? (lhs) : (rhs)
 
 template<class Type>
-Type Max(Type val)
+constexpr Type Max(Type val)
 {
 	return val;
 }
 
 template<class Type, class... Types>
-Type Max(Type lhs, Types... others)
+constexpr auto Max(Type lhs, Types... others)
 {
 	return max(lhs, Max(others...));
 }
 
 template<class Type>
-Type Min(Type val)
+constexpr Type Min(Type val)
 {
 	return val;
 }
 
 template<class Type, class... Types>
-Type Min(Type lhs, Types... others)
+constexpr auto Min(Type lhs, Types... others)
 {
 	return min(lhs, Min(others...));
 }
