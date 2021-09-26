@@ -1,10 +1,18 @@
 #pragma once
+
+#ifndef Structures_h__
+#define Structures_h__
+
 #include <initializer_list>
 #include "Difinitions.h"
 #include <assert.h>
 #include <vector>
 #include <string>
+#include <iostream>
+#include <functional>
 #include <map>
+#include <type_traits>
+#include "Helper.h"
 
 namespace Struct
 {
@@ -198,24 +206,22 @@ namespace Struct
 
 	private:
 
-		Type*  content  = nullptr	 ;
-		size_t size     = 0			 ;
-		size_t capacity = MINCAPACITY;
+		Type*  content ;
+		size_t size	   ;
+		size_t capacity;
 
 	public:
 
 		typedef Type*		Iterator;
 		typedef const Type* ConstIterator;
 
-		explicit Vector(size_t size = MINCAPACITY)
+		explicit Vector(size_t size = 0, Type initialValue = Type())
+			:size(size), capacity(MINCAPACITY), content(nullptr)
 		{
-			if (size <= Capacity())
+			Reserve(size);
+			for (size_t i = 0; i < size; ++i)
 			{
-				content = new Type[Capacity() + 1];
-			}
-			else
-			{
-				Reserve(size);
+				*(content + i) = initialValue;
 			}
 		}
 
@@ -242,22 +248,15 @@ namespace Struct
 		}
 
 		Vector(initializer_list<Type>&& data)
+			:size(size), capacity(MINCAPACITY), content(nullptr)
 		{
-			if (data.size() <= Capacity())
+			Reserve(data.size());
+			size = data.size();
+			for (int i = 0; i < size; ++i)
 			{
-				content = new Type[Capacity() + 1];
-			}
-			else
-			{
-				Reserve(data.size());
-			}
-			
-			for (int i = 0; i < data.size(); ++i)
-			{
-				assert(content + i);
 				*(content + i) = *(data.begin() + i);
 			}
-			size = data.size();
+			
 		}
 
 		size_t Size() const
@@ -308,7 +307,8 @@ namespace Struct
 				swap(*It, *(It + 1));
 				++It;
 			}
-			--size;
+			
+			Resize(size - 1);
 		}
 
 		void Erase(size_t index)
@@ -317,12 +317,13 @@ namespace Struct
 			{
 				swap(content[i], content[i + 1]);
 			}
-			--size;
+
+			Resize(size - 1);
 		}
 
 		void Resize(size_t newSize)
 		{
-			if (newSize > Capacity())
+			if (newSize > Capacity() || newSize < Capacity() / 3)
 				Reserve(newSize);
 			size = newSize;
 			
@@ -330,16 +331,25 @@ namespace Struct
 
 		void Reserve(size_t newCapacity)
 		{
-			if (newCapacity <= Capacity())
-				return;
-			size_t newCap = (newCapacity / Capacity() + 1) * Capacity();
-			auto newContent = new Type[newCap + 1];
-			for (int i = 0; i != Size(); ++i)
-			{
-				swap(newContent[i], content[i]);
+			size_t newCap = Capacity();
+			if(newCapacity > newCap)
+				newCap = (newCapacity / newCap + 1) * newCap;
+			elif(newCapacity < newCap / 3)
+				newCap = newCap / 2;
+			if (content)
+			{//copy the original data and adjust capacity.
+				Type* newContent = new Type[newCap + 1]();
+				for (size_t i = 0; i < size; ++i)
+				{
+					swap(*(content + i), *(newContent + i));
+				}
+				content = newContent;
 			}
-			delete[] content;
-			content = newContent;
+			else
+			{
+				content = new Type[newCap + 1]();
+			}
+
 			capacity = newCap;
 		}
 	
@@ -381,20 +391,18 @@ namespace Struct
 
 		Type PopBack()
 		{
-			size_t sz = Size() - 1;
-			Resize(sz);
-			return *(content + sz);
+			Resize(Size() - 1);
+			return *(content + Size());
 		}
 
 		Type PopFront()
 		{
-			size_t sz = Size() - 1;
-			Resize(sz);
-			for (int i = 0; i != sz; ++i)
+			for (int i = 0; i != Size() - 1; ++i)
 			{
 				swap(*(content + i), *(content + i + 1));
 			}
-			return *(content + sz);
+			Resize(Size() - 1);
+			return *(content + Size());
 		}
 
 		
@@ -1276,16 +1284,15 @@ public:
 
 };
 
-
-//Another version of Forward List, 
-//using a head node to store removed nodes in case of frequently allocation and deallocation.
-//TODO
-//By this design, this list might be able to revoke remove operations(removed nodes are reversely stored in another list)
-//TODO
-//These removed nodes should be deleted when necessary.
-template<class Type>
-class CachedForwardList
-{
+	//Another version of Forward List, 
+	//using a head node to store removed nodes in case of frequently allocation and deallocation.
+	//TODO
+	//By this design, this list might be able to revoke remove operations(removed nodes are reversely stored in another list)
+	//TODO
+	//These removed nodes should be deleted when necessary.
+	template<class Type>
+	class CachedForwardList
+	{
 	private:
 
 		struct Node
@@ -1300,11 +1307,12 @@ class CachedForwardList
 				:value(move(value)), next(next) {  }
 
 			Node(Node* next = nullptr)
-				:next(next) {  }
+				:value(Type()), next(next) {  }
 		};
 
 		struct HeadNode : Node
 		{//A special node in the head to keep removed nodes as another list.
+			
 			Node* Cache;
 
 			HeadNode(Node* cache = nullptr, Node* next = nullptr)
@@ -1313,7 +1321,10 @@ class CachedForwardList
 	
 		class ConstIterator
 		{
+
 			friend class CachedForwardList<Type>;
+
+		private:
 
 			Node*		  curr;
 			const size_t& size;
@@ -1570,6 +1581,39 @@ class CachedForwardList
 			}
 		}
 
+		CachedForwardList(CachedForwardList& rhs)
+			:CachedForwardList() 
+		{//Trying to avoid allocation
+
+			for (auto iter = rhs.Begin(); iter != rhs.End(); ++iter)
+			{
+				this->tail->next = rhs.AllocNode(*iter, head);
+				this->tail = this->tail->next;
+				++size;
+			}
+		}
+
+		CachedForwardList(CachedForwardList&& rhs)
+			:CachedForwardList() 
+		{
+			swap(this->size, rhs.size);
+			swap(this->head, rhs.head);
+			swap(this->tail, rhs.tail);
+		}
+
+		template<template<class> class Container, class OtherType, 
+			class = enable_if_t<is_convertible_v<Type, OtherType>, typename Container<OtherType>::Iterator>>
+		CachedForwardList(Container<OtherType>& rhs)
+			:CachedForwardList()
+		{
+			for (auto iter = rhs.Begin(); iter != rhs.End(); ++iter)
+			{
+				this->tail->next = this->AllocNode(Type(*iter), head);
+				this->tail = this->tail->next;
+				++size;
+			}
+		}
+
 		~CachedForwardList()
 		{
 			DoClear();
@@ -1577,6 +1621,41 @@ class CachedForwardList
 			delete head;
 		}
 	
+		CachedForwardList& operator=(CachedForwardList& rhs)
+		{//Trying to avoid allocation
+			
+			Clear();
+			for (auto iter = rhs.Begin(); iter != rhs.End(); ++iter)
+			{
+				this->tail->next = this->head->Cache ? this->AllocNode(*iter, head) : rhs.AllocNode(*iter, head);
+				this->tail = this->tail->next;
+				++size;
+			}
+			return *this;
+		}
+
+		CachedForwardList& operator=(CachedForwardList&& rhs)
+		{
+			swap(this->size, rhs.size);
+			swap(this->head, rhs.head);
+			swap(this->tail, rhs.tail);
+			return *this;
+		}
+
+		template<template<class> class Container, class OtherType, 
+			class = enable_if_t<is_convertible_v<Type, OtherType>, typename Container<OtherType>::Iterator>>
+		CachedForwardList& operator=(Container<OtherType>& rhs)
+		{
+			Clear();
+			for (auto iter = rhs.Begin(); iter != rhs.End(); ++iter)
+			{
+				this->tail->next = this->AllocNode(*iter, head);
+				this->tail = this->tail->next;
+				++size;
+			}
+			return *this;
+		}
+
 		//Delete all content.
 		void Clear()
 		{//but not really delete them, instead, throw them into the caches.
@@ -1660,7 +1739,7 @@ class CachedForwardList
 			++size;
 		}
 
-		//T(n) = O(n)
+		//A terrible O(n) algorithm
 		Type PopBack()
 		{
 			assert(size);
@@ -1675,11 +1754,22 @@ class CachedForwardList
 		Type PopFront()
 		{
 			assert(size);
-			auto node = head->next;
-			head->next = node->next;
-			CacheNode(node);
-			--size;
-			return head->Cache->value;
+			if(size != 1)
+			{
+				auto node = head->next;
+				head->next = node->next;
+				CacheNode(node);
+				--size;
+				return head->Cache->value;
+			}
+			else
+			{
+				CacheNode(head->next);
+				--size;
+				head->next = head;
+				tail = head;
+				return head->Cache->value;
+			}
 		}
 
 		//Remove an element by the iterator,
@@ -1757,13 +1847,13 @@ class CachedForwardList
 		}
 		
 		
-};
+	};
 
 	/**
 	 * Advanced Structures
 	 */
 
-	template<class Type, template<class> class Container = ForwardList>
+	template<class Type, template<class> class Container = CachedForwardList>
 	class Stack
 	{
 	private:
@@ -1841,7 +1931,7 @@ class CachedForwardList
 		}
 	};
 
-	template<class Type, template<class> class Container = ForwardList>
+	template<class Type, template<class> class Container = CachedForwardList>
 	class Queue
 	{
 	private:
@@ -1988,24 +2078,27 @@ class CachedForwardList
 	template<class Type>
 	class BinaryTree
 	{
-		template<class Type> friend ostream& operator<<(ostream& os, const BinaryTree<Type>& tree);
+		template<template<class> class Tree, class Type>
+		friend auto operator<<(ostream& os, const Tree<Type>& tree)->
+			decltype(tree.root, declval<ostream&>() << declval<Type>(), os);
 	private:
 
-		struct TreeNode
+		struct Node
 		{
 
-			Type	  value;
-			TreeNode* left;
-			TreeNode* right;
+			Type  value;
+			Node* left ;
+			Node* right;
 
-			explicit TreeNode(Type value = NULL, TreeNode* left = nullptr, TreeNode* right = nullptr) noexcept
+			Node() = default;
+			explicit Node(Type value, Node* left = nullptr, Node* right = nullptr) noexcept
 				:value(value), left(left), right(right) { }
 
 		};
 
 	private:
 
-		static void DoClear(TreeNode* root)
+		static void DoClear(Node* root)
 		{
 			if (root)
 			{
@@ -2018,21 +2111,21 @@ class CachedForwardList
 		}
 
 		//Copy a tree from a root node to another root node
-		static TreeNode* CpyTree(TreeNode* destinationRoot, TreeNode* resourceRoot)
+		static Node* CpyTree(Node* destinationRoot, Node* resourceRoot)
 		{
 			destinationRoot->value = resourceRoot->value;
 			if(resourceRoot->left)
 			{
-				destinationRoot->left = CpyTree(new TreeNode(), resourceRoot->left);
+				destinationRoot->left = CpyTree(new Node(), resourceRoot->left);
 			}
 			if (resourceRoot->right)
 			{
-				destinationRoot->right = CpyTree(new TreeNode(), resourceRoot->right);
+				destinationRoot->right = CpyTree(new Node(), resourceRoot->right);
 			}
 				return destinationRoot;
 		}
 		
-		static TreeNode* DeepthFirstSearch(TreeNode* root, const Type& value)
+		static Node* DeepthFirstSearch(Node* root, const Type& value)
 		{
 			if (!root) return nullptr;
 			if (root->value == value) return root;
@@ -2051,14 +2144,14 @@ class CachedForwardList
 
 		}
 
-		static TreeNode* BreadthFirstSearch(TreeNode* root, const Type& value)
+		static Node* BreadthFirstSearch(Node* root, const Type& value)
 		{
 			assert(root);
-			Queue<TreeNode*> queue;
+			Queue<Node*> queue;
 			queue.Enqueue(root);
 			while (!queue.IsEmpty())
 			{
-				TreeNode* curr = queue.Dequeue();
+				Node* curr = queue.Dequeue();
 				if (curr->left) queue.Enqueue(curr->left);
 				if (curr->right) queue.Enqueue(curr->right);
 				if (curr->value == value) return curr;
@@ -2068,9 +2161,9 @@ class CachedForwardList
 		}
 
 		//make sure that the result node is not complete
-		static TreeNode* FindHighestLeaf(TreeNode* root)
+		static Node* FindHighestLeaf(Node* root)
 		{
-			Queue<TreeNode*> queue;
+			Queue<Node*> queue;
 			queue.Enqueue(root);
 			while (!queue.IsEmpty())
 			{
@@ -2090,13 +2183,13 @@ class CachedForwardList
 
 	private:
 
-		TreeNode* root;
-		size_t	  size;
+		Node*  root;
+		size_t size;
 
 	public:
 
 		explicit BinaryTree() noexcept
-			:root(new TreeNode()), size(0)
+			:root(new Node()), size(0)
 		{ }
 
 		~BinaryTree()
@@ -2108,18 +2201,18 @@ class CachedForwardList
 			:BinaryTree()
 		{
 			assert(data.size());
-			Queue<TreeNode*> roots;
+			Queue<Node*> roots;
 			roots.Enqueue(root);
 			root->value = *(data.begin());
 			++size;
 			for (int i = 1; i < data.size(); ++i)
 			{
-				TreeNode* front = roots.Front();
+				Node* front = roots.Front();
 				if (front->left && front->right)
 					roots.Dequeue();
 				front = roots.Front();
 
-				TreeNode* node = new TreeNode(*(data.begin() + i));
+				Node* node = new Node(*(data.begin() + i));
 				roots.Enqueue(node);
 				if (!front->left)
 				{
@@ -2161,12 +2254,12 @@ class CachedForwardList
 			return size;
 		}
 
-		const TreeNode* DFS(Type value) const
+		const Node* DFS(Type value) const
 		{
 			return DeepthFirstSearch(root, value);
 		}
 
-		const TreeNode* BFS(Type value) const
+		const Node* BFS(Type value) const
 		{
 			return BreadthFirstSearch(root, value);
 		}
@@ -2182,11 +2275,11 @@ class CachedForwardList
 			auto node = FindHighestLeaf(root);
 			if (!node->left)
 			{
-				node->left = new TreeNode(value);
+				node->left = new Node(value);
 			}
 			else
 			{
-				node->right = new TreeNode(value);
+				node->right = new Node(value);
 			}
 			++size;
 		}
@@ -2202,22 +2295,22 @@ class CachedForwardList
 			auto node = FindHighestLeaf(root);
 			if (!node->left)
 			{
-				node->left = new TreeNode(move(value));
+				node->left = new Node(move(value));
 			}
 			else
 			{
-				node->right = new TreeNode(move(value));
+				node->right = new Node(move(value));
 			}
 			++size;
 		}
 
 		void Remove(const Type& value)
 		{
-			Queue<TreeNode*> nodes;
-			TreeNode* mark		   = nullptr;
-			TreeNode* markParent   = nullptr;//used when remove the root node
-			TreeNode* targetParent = nullptr;
-			TreeNode* target	   = nullptr;
+			Queue<Node*> nodes;
+			Node* mark		   = nullptr;
+			Node* markParent   = nullptr;//used when remove the root node
+			Node* targetParent = nullptr;
+			Node* target	   = nullptr;
 			nodes.Enqueue(root);
 			while (!nodes.IsEmpty())
 			{
@@ -2272,9 +2365,9 @@ class CachedForwardList
 			Remove(v);
 		}
 
-		TreeNode* Contains(const Type& value)
+		Node* Contains(const Type& value)
 		{
-			Queue<TreeNode*> nodes;
+			Queue<Node*> nodes;
 			nodes.Enqueue(root);
 			while (!nodes.IsEmpty())
 			{
@@ -2288,15 +2381,15 @@ class CachedForwardList
 			return nullptr;
 		}
 
-		TreeNode* Contains(Type&& value)
+		Node* Contains(Type&& value)
 		{
 			Type v = move(value);
 			return Contains(v);
 		}
 
-		const TreeNode* Contains(const Type& value) const
+		const Node* Contains(const Type& value) const
 		{
-			Queue<TreeNode*> nodes;
+			Queue<Node*> nodes;
 			nodes.Enqueue(root);
 			while (!nodes.IsEmpty())
 			{
@@ -2310,7 +2403,7 @@ class CachedForwardList
 			return nullptr;
 		}
 
-		const TreeNode* Contains(Type&& value) const
+		const Node* Contains(Type&& value) const
 		{
 			Type v = move(value);
 			return Contains(v);
@@ -2320,68 +2413,919 @@ class CachedForwardList
 	template<class Type>
 	class BinarySearchTree
 	{
+		template<template<class> class Tree, class Type>
+		friend auto operator<<(ostream& os, const Tree<Type>& tree)->
+			decltype(tree.root, declval<ostream&>() << declval<Type>(), os);
+	
+	private:
+
+		struct Node
+		{
+			Type  value;
+			Node* left ;
+			Node* right;
+
+			Node() = default;
+
+			Node(const Type& value,Node* left = nullptr, Node* right = nullptr)
+				:value(value),left(left), right(right){  }
+
+			Node(Type&& value, Node* left = nullptr, Node* right = nullptr)
+				:value(move(value)), left(left), right(right) {  }
+		
+		};
+	
+	private:
+
+		Node*  root;
+		size_t size;
+	
+	private:
+
+		bool Contains(Type&& value, Node* root) const
+		{
+			if (!root) return false;
+			while (root)
+			{
+				if (root->value < value)
+					root = root->right;
+				else if (value > root->value)
+					root = root->left;
+				else
+					return true;
+			}
+			return false;
+		}
+
+		bool Contains(const Type& value, Node* root) const
+		{
+			if (!root) return false;
+			while (root)
+			{
+				if (root->value < value)
+					root = root->right;
+				else if (value > root->value)
+					root = root->left;
+				else
+					return true;
+			}
+			return false;
+		}
+
+		Node* FindMax(Node* root) const
+		{
+			while (root)
+			{
+				if (!root->right)
+					break;
+				root = root->right;
+			}
+			return root;
+		}
+
+		Node* FindMin(Node* root) const
+		{
+			while (root)
+			{
+				if (!root->left)
+					break;
+				root = root->left;
+			}
+			return root;
+		}
+
+		void Insert(const Type& value, Node*& root)
+		{
+			if (!root) root = new Node(value);
+			if (root->value < value)
+				Insert(value, root->right);
+			else if (value < root->value)
+				Insert(value, root->left);
+			else
+				return;
+		}
+
+		void Insert(Type&& value, Node*& root)
+		{
+			if (!root) root = new Node(move(value));
+			if (root->value < value)
+				Insert(move(value), root->right);
+			else if (value < root->value)
+				Insert(move(value), root->left);
+			else
+				return;
+		}
+
+		void Remove(const Type& value, Node*& root)
+		{
+			if (!root) return;
+			if (root->value < value)
+				Remove(value, root->right);
+			else if (value < root->value)
+				Remove(value, root->left);
+			else if (root->left && root->right)
+			{
+				root->value = FindMin(root->right)->value;
+				Remove(root->value, root->right);
+			}
+			else
+			{
+				Node* prev = root;
+				root = root->left ? root->left : root->right;
+				delete prev;
+			}
+		}
+
+		void Clear(Node* root)
+		{
+			if (!root) return;
+			if (root->left)
+				Clear(root->left);
+			if (root->right)
+				Clear(root->right);
+			delete root;
+		}
+
+		void Clone(Node* toRoot, Node* fromRoot)
+		{
+			if (!fromRoot || !toRoot)
+				return;
+			toRoot->value = fromRoot->value;
+			if (fromRoot->left)
+			{
+				toRoot->left = new Node();
+				Clone(toRoot->left, fromRoot->left);
+			}
+			if (fromRoot->right)
+			{
+				toRoot->right = new Node();
+				Clone(toRoot->right, fromRoot->right);
+			}
+		}
+
+	public:
+
+		//Unable to construct if the given Type can not be compared.
+		template<class = decltype(declval<Type>() < declval<Type>(), declval<Type>() != declval<Type>(), true)>
+		BinarySearchTree()
+			:root(nullptr), size(0) {  }
+		
+		BinarySearchTree(initializer_list<Type>&& il)
+			:BinarySearchTree()
+		{
+			for (auto iter = il.begin(); iter != il.end(); ++iter)
+			{
+				Insert(*iter, root);
+				++size;
+			}
+		}
+
+		BinarySearchTree(const BinarySearchTree& rhs)
+			:BinarySearchTree()
+		{
+			root = new Node();
+			Clone(root, rhs.root);
+			size = rhs.size;
+		}
+
+		BinarySearchTree(BinarySearchTree&& rhs)
+			:BinarySearchTree()
+		{
+			swap(rhs.root, root);
+			swap(rhs.size, size);
+		}
+
+		~BinarySearchTree()
+		{
+			Clear(root);
+		}
+
+		BinarySearchTree& operator=(const BinarySearchTree& rhs)
+		{
+			Clear(root);
+			root = new Node();
+			Clone(root, rhs.root);
+			size = rhs.size;
+			return *this;
+		}
+
+		BinarySearchTree& operator=(BinarySearchTree&& rhs)
+		{
+			swap(rhs.root, root);
+			swap(rhs.size, size);
+			return *this;
+		}
+
+		bool IsEmpty() const 
+		{
+			return !size;
+		}
+		
+		void Clear()
+		{
+			Clear(root);
+			root = nullptr;
+		}
+
+		void Remove(const Type& value)
+		{
+			Remove(value, root);
+			--size;
+		}
+
+		void Remove(Type&& value)
+		{
+			Type v = move(value);
+			Remove(v, root);
+			--size;
+		}
+
+		void Insert(const Type& value)
+		{
+			Insert(value, root);
+			++size;
+		}
+
+		void Insert(Type&& value)
+		{
+			Insert(move(value), root);
+			++size;
+		}
+
+		bool Contains(Type&& value) const
+		{
+			return Contains(move(value), root);
+		}
+
+		bool Contains(const Type& value) const
+		{
+			return Contains(value, root);
+		}
+
+	};
+
+	template<class Type>
+	class BalancedBinarySearchTree
+	{
+		template<template<class> class Tree, class Type>
+		friend auto operator<<(ostream& os, const Tree<Type>& tree)->
+			decltype(tree.root, declval<ostream&>() << declval<Type>(), os);
+	
+	private:
+
+		struct Node
+		{
+			Type  value ;
+			Node* left  ;
+			Node* right ;
+			int   height;
+
+			Node(const Type& value, int height = 0, Node* left = nullptr, Node* right = nullptr)
+				:value(value), height(height), left(left), right(right) {  }
+			
+			Node(Type&& value, int height = 0, Node* left = nullptr, Node* right = nullptr)
+				:value(move(value)), height(height), left(left), right(right) {  }
+		
+		};
+	
+	private:
+
+		Node*  root;
+		size_t size;
+	
+	private:
+
+		int height(Node* node) const
+		{
+			return node ? node->height : -1;
+		}
+
+		//Imbalance happened by the insertion at the right of the root node's right child.
+		//That means the height of right child - that of left child > 1
+		void RotateLeft(Node*& root)
+		{
+			if (!root) return;
+			Node* prev = root;
+			root = prev->right;
+			prev->right = root->left;
+			root->left = prev;
+			prev->height = max(height(prev->left), height(prev->right)) + 1;
+			root->height = max(height(root->left), height(root->right)) + 1;
+		}
+
+		//Imbalance happened by the insertion at the left of the root node's left child.
+		//That means the height of left child - that of right child > 1
+		void RotateRight(Node*& root)
+		{
+			if (!root) return;
+			Node* prev = root;
+			root = prev->left;
+			prev->left = root->right;
+			root->right = prev;
+			prev->height = max(height(prev->left), height(prev->right)) + 1;
+			root->height = max(height(root->left), height(root->right)) + 1;
+
+		}
+
+		void RotateRightLeft(Node*& root)
+		{
+			if (!root) return;
+			RotateRight(root->left);
+			RotateLeft(root);
+
+		}
+
+		void RotateLeftRight(Node*& root)
+		{
+			if (!root) return;
+			RotateLeft(root->left);
+			RotateRight(root);
+
+		}
+
+		void Balance(Node*& root)
+		{
+			if (!root) return;
+			if (height(root->left) - height(root->right) > 1)
+				if (height(root->left->left) >= height(root->left->right))
+					RotateRight(root);
+				else
+					RotateLeftRight(root);
+			if (height(root->right) - height(root->left) > 1)
+				if (height(root->right->right) >= height(root->right->left))
+					RotateLeft(root);
+				else
+					RotateRightLeft(root);\
+
+			root->height = max(height(root->left), height(root->right)) + 1;
+		}
+		
+		void Insert(const Type& value, Node*& root)
+		{
+			if (!root) root = new Node(value);
+			if (root->value < value)
+				Insert(value, root->right);
+			elif (value < root->value)
+				Insert(value, root->left);
+
+			Balance(root);
+		}
+
+		void Insert(Type&& value, Node*& root)
+		{
+			if (!root) root = new Node(move(value));
+			if (root->value < value)
+				Insert(move(value), root->right);
+			elif (value < root->value)
+				Insert(move(value), root->left);
+
+			Balance(root);
+		}
+
+		void Remove(const Type& value, Node*& root)
+		{
+			if (!root) return;
+			if (root->value < value)
+				Remove(value, root->right);
+			else if (value < root->value)
+				Remove(value, root->left);
+			else if (root->left && root->right)
+			{
+				root->value = FindMin(root->right)->value;
+				Remove(root->value, root->right);
+			}
+			else
+			{
+				Node* prev = root;
+				root = root->left ? root->left : root->right;
+				delete prev;
+			}
+
+			Balance(root);
+		}
+
+		void Clear(Node* root)
+		{
+			if (!root) return;
+			if (root->left)
+				Clear(root->left);
+			if (root->right)
+				Clear(root->right);
+			delete root;
+		}
+
+		void Clone(Node* toRoot, Node* fromRoot)
+		{
+
+		}
+
+		bool Contains(const Type& value)
+		{
+
+			return false;
+		}
+
+	public:
+		//Unable to construct if the given Type can not be compared.
+		template<class = decltype(declval<Type>() < declval<Type>(), declval<Type>() != declval<Type>(), true)>
+		BalancedBinarySearchTree()
+			:root(nullptr), size(0) {   }
+	
+		BalancedBinarySearchTree(initializer_list<Type>&& il)
+			:BalancedBinarySearchTree()
+		{
+			for (auto iter = il.begin(); iter < il.end(); ++iter)
+			{
+				Insert(*iter);
+			}
+		}
+
+		~BalancedBinarySearchTree()
+		{
+			Clear(root);
+		}
+
+		bool IsEmpty() const
+		{
+			return !size;
+		}
+
+		void Clear()
+		{
+			Clear(root);
+			root = nullptr;
+		}
+
+		void Remove(const Type& value)
+		{
+			Remove(value, root);
+			--size;
+		}
+
+		void Remove(Type&& value)
+		{
+			Remove(move(value), root);
+			--size;
+		}
+
+		void Insert(const Type& value)
+		{
+			Insert(value, root);
+			++size;
+		}
+
+		void Insert(Type&& value)
+		{
+			Insert(move(value), root);
+			++size;
+		}
+
+	};
+
+	template<class Type>
+	using AVLTree = BalancedBinarySearchTree<Type>;
+
+	template<class Type>
+	class SPTree
+	{
+
+	};
+
+	template<class Type>
+	class ThreadedBinaryTree
+	{
+	private:
+
+		struct Node
+		{
+			Type  value ;
+			Node* left  ;
+			bool  lChild;
+			Node* right ;
+			bool  rChild;
+
+			Node(const Type& value, Node* left = nullptr, Node* right = nullptr, bool lChild = 1, bool rChild = 1)
+				:value(value), left(left), right(right), lChild(lChild), rChild(rChild){  }
+
+			Node(Type&& value, Node* left = nullptr, Node* right = nullptr, bool lChild = 1, bool rChild = 1)
+				:value(value), left(left), right(right), lChild(lChild), rChild(rChild) {  }
+
+		};
+
+	private:
+
+		Node*  head;
+		Node*  root;
+		size_t size;
+	
+	private:
+
+		void Insert(const Type& value, Node*& root)
+		{
+			if (!size)
+			{
+				this->root = new Node(value, head, head, 0, 0);
+				head->right = this->root;
+				head->left = this->root;
+				++size;
+			}
+			elif(!root)
+			{
+				root = new Node(value);
+				++size;
+			}
+			elif(value < root->value)
+			{
+				if (!root->lChild)
+				{
+					Node* prev = root->left;
+					root->left = nullptr;
+					Insert(value, root->left);
+					root->lChild = 1;
+					root->left->left = prev;
+					root->left->lChild = 0;
+					root->left->right = root;
+					root->left->rChild = 0;
+					if (prev == head)
+					{
+						head->right = root->left;
+					}
+				}
+				else
+				{
+					Insert(value, root->left);
+					root->lChild = 1;
+				}
+			}
+			elif(root->value < value)
+			{
+				if (!root->rChild)
+				{
+					Node* next = root->right;
+					root->right = nullptr;
+					Insert(value, root->right);
+					root->rChild = 1;
+					root->right->right = next;
+					root->right->rChild = 0;
+					root->right->left = root;
+					root->right->lChild = 0;
+					if (next == head)
+					{
+						head->left = root->right;
+					}
+				}
+				else
+				{
+					Insert(value, root->right);
+					root->rChild = 1;
+				}
+			}
+		}
+
+		void Insert(Type&& value, Node*& root)
+		{
+			if (!size)
+			{
+				this->root = new Node(move(value), head, head, 0, 0);
+				head->right = this->root;
+				head->left = this->root;
+				++size;
+			}
+			elif(!root)
+			{
+				root = new Node(move(value));
+				++size;
+			}
+			elif(value < root->value)
+			{
+				if (!root->lChild)
+				{
+					Node* prev = root->left;
+					root->left = nullptr;
+					Insert(value, root->left);
+					root->lChild = 1;
+					root->left->left = prev;
+					root->left->lChild = 0;
+					root->left->right = root;
+					root->left->rChild = 0;
+					if (prev == head)
+					{
+						head->right = root->left;
+					}
+				}
+				else
+				{
+					Insert(value, root->left);
+					root->lChild = 1;
+				}
+			}
+			elif(root->value < value)
+			{
+				if (!root->rChild)
+				{
+					Node* next = root->right;
+					root->right = nullptr;
+					Insert(value, root->right);
+					root->rChild = 1;
+					root->right->right = next;
+					root->right->rChild = 0;
+					root->right->left = root;
+					root->right->lChild = 0;
+					if (next == head)
+					{
+						head->left = root->right;
+					}
+				}
+				else
+				{
+					Insert(value, root->right);
+					root->rChild = 1;
+				}
+			}
+		}
+
+		void Clear(Node* root)
+		{
+			if (root)
+			{
+				if (root->lChild && root->lChild)
+					Clear(root->left);
+				if (root->rChild && root->right)
+					Clear(root->right);
+				delete root;
+			}
+		}
+
+	public:
+
+		ThreadedBinaryTree()
+			:head(new Node(Type(), nullptr, nullptr, 0, 0)), root(nullptr), size(0) {  }
+
+		ThreadedBinaryTree(initializer_list<Type>&& il)
+			:ThreadedBinaryTree()
+		{
+			for (auto iter = il.begin(); iter != il.end(); ++iter)
+			{
+				Insert(*iter, root);
+			}
+		}
+
+		~ThreadedBinaryTree()
+		{
+			Clear(root);
+			delete head;
+		}
+	};
+
+	template<class Type>
+	class ThreadedBalancedBinarySearchTree
+	{
+	private:
+
+		struct Node
+		{
+			Type  value;
+			Node* left;
+			bool  lChild;
+			Node* right;
+			bool  rChild;
+
+			Node(const Type& value, Node* left = nullptr, Node* right = nullptr, bool lChild = 1, bool rChild = 1)
+				:value(value), left(left), right(right), lChild(lChild), rChild(rChild) {  }
+
+			Node(Type&& value, Node* left = nullptr, Node* right = nullptr, bool lChild = 1, bool rChild = 1)
+				:value(value), left(left), right(right), lChild(lChild), rChild(rChild) {  }
+
+		};
+
+	private:
+
+		Node* head;
+		Node* root;
+		size_t size;
+
+	private:
+
+		void Insert(const Type& value, Node*& root)
+		{
+			if (!size)
+			{
+				this->root = new Node(value, head, head, 0, 0);
+				head->right = this->root;
+				head->left = this->root;
+				++size;
+			}
+			elif(!root)
+			{
+				root = new Node(value);
+				++size;
+			}
+			elif(value < root->value)
+			{
+				if (!root->lChild)
+				{
+					Node* prev = root->left;
+					root->left = nullptr;
+					Insert(value, root->left);
+					root->lChild = 1;
+					root->left->left = prev;
+					root->left->lChild = 0;
+					root->left->right = root;
+					root->left->rChild = 0;
+					if (prev == head)
+					{
+						head->right = root->left;
+					}
+				}
+				else
+				{
+					Insert(value, root->left);
+					root->lChild = 1;
+				}
+			}
+			elif(root->value < value)
+			{
+				if (!root->rChild)
+				{
+					Node* next = root->right;
+					root->right = nullptr;
+					Insert(value, root->right);
+					root->rChild = 1;
+					root->right->right = next;
+					root->right->rChild = 0;
+					root->right->left = root;
+					root->right->lChild = 0;
+					if (next == head)
+					{
+						head->left = root->right;
+					}
+				}
+				else
+				{
+					Insert(value, root->right);
+					root->rChild = 1;
+				}
+			}
+		}
+
+		void Insert(Type&& value, Node*& root)
+		{
+			if (!size)
+			{
+				this->root = new Node(move(value), head, head, 0, 0);
+				head->right = this->root;
+				head->left = this->root;
+				++size;
+			}
+			elif(!root)
+			{
+				root = new Node(move(value));
+				++size;
+			}
+			elif(value < root->value)
+			{
+				if (!root->lChild)
+				{
+					Node* prev = root->left;
+					root->left = nullptr;
+					Insert(value, root->left);
+					root->lChild = 1;
+					root->left->left = prev;
+					root->left->lChild = 0;
+					root->left->right = root;
+					root->left->rChild = 0;
+					if (prev == head)
+					{
+						head->right = root->left;
+					}
+				}
+				else
+				{
+					Insert(value, root->left);
+					root->lChild = 1;
+				}
+			}
+			elif(root->value < value)
+			{
+				if (!root->rChild)
+				{
+					Node* next = root->right;
+					root->right = nullptr;
+					Insert(value, root->right);
+					root->rChild = 1;
+					root->right->right = next;
+					root->right->rChild = 0;
+					root->right->left = root;
+					root->right->lChild = 0;
+					if (next == head)
+					{
+						head->left = root->right;
+					}
+				}
+				else
+				{
+					Insert(value, root->right);
+					root->rChild = 1;
+				}
+			}
+		}
+
+		void Clear(Node* root)
+		{
+			if (root)
+			{
+				if (root->lChild && root->lChild)
+					Clear(root->left);
+				if (root->rChild && root->right)
+					Clear(root->right);
+				delete root;
+			}
+		}
+
+	public:
+
+		ThreadedBalancedBinarySearchTree()
+			:head(new Node(Type(), nullptr, nullptr, 0, 0)), root(nullptr), size(0) {  }
+
+		ThreadedBalancedBinarySearchTree(initializer_list<Type>&& il)
+			:ThreadedBalancedBinarySearchTree()
+		{
+			for (auto iter = il.begin(); iter != il.end(); ++iter)
+			{
+				Insert(*iter, root);
+			}
+		}
+
+		~ThreadedBalancedBinarySearchTree()
+		{
+			Clear(root);
+			delete head;
+		}
+	};
+
+	template<class Type, template<class>class CompareObject = Less>
+	class BinaryHeap
+	{
+
+	private:
+
+		Vector<Type> data;
+
+	private:
+
+
+	public:
+
+		BinaryHeap() = default;
+
+		BinaryHeap(initializer_list<Type>&& il)
+		{
+			for (auto iter = il.begin(); iter != il.end(); ++iter)
+			{
+				Insert(*iter);
+			}
+		}
+
+		void Insert(const Type& value)
+		{
+			int loc = data.Size();
+			data.PushBack(value);
+
+			//Percolating up until we find the right place for the new element
+			int parLoc = loc / 2;
+			while (CompareObject<Type>()(data[loc], data[parLoc]))
+			{
+				swap(data[parLoc], data[loc]);
+				loc = parLoc;
+				parLoc /= 2;
+			}
+
+		}
+
 
 	};
 
 
-
-
 	//Operation Methods
 
-	template<class Type>
-	ostream& operator<<(ostream& os, const Vector<Type>& target)
+	//For LinearLists with Iterators
+	template<template<class> class LinearList, class Type>
+	inline auto operator<<(ostream& os, const LinearList<Type>& list)->
+		decltype(list.Begin(), list.End(), declval<ostream&>() << declval<Type>(), os)
 	{
-		if (target.Size() == 0) return os;
-		os << target.operator[](0);
-		for (int i = 1; i < target.Size(); ++i)
-		{
-			os << "," << target.operator[](i);
-		}
-		return os << endl;
-	}
-
-	template<class Type>
-	ostream& operator<<(ostream& os, const LinkedList<Type>& list)
-	{
-		auto it = list.Begin();
-		auto end = list.End();
-
-		if (it == end) return os;
-
-		os << *it;
-		++it;
-
-		while (it != end)
-		{
-			os << "," << *it;
-			++it;
-		}
-
-		return os << endl;
-	}
-
-	template<class Type>
-	ostream& operator<<(ostream& os, const ForwardList<Type>& list)
-	{
-		if (list.IsEmpty()) return os;
-		auto It = list.Begin();
-		auto Ed = list.End();
-		os << *It;
-		++It;
-		while (It != Ed)
-		{
-			os << "," << *It;
-			++It;
-		}
+		for(auto iter = list.Begin(); iter != list.End(); ++iter)
+			os << *iter << " ";
 		return os;
 	}
 
+	//For Trees
 	//In order to control the element length that printed on screen,
 	//you can define the macro MAXELEMENTLENGTH to control the probable length in your btree,
 	//this macro will be defined as 3 if you ignore it,
 	//but this value better be a odd number 
-	template<class Type>
-	ostream& operator<<(ostream& os, const BinaryTree<Type>& tree)
+	template<template<class> class Tree, class Type>
+	inline auto operator<<(ostream& os, const Tree<Type>& tree)->
+		decltype(tree.root, declval<ostream&>() << declval<Type>(), os)
 	{
 		/**
 		 *  Overall, we need to know which level the current element belongs to,
@@ -2397,11 +3341,11 @@ class CachedForwardList
 #define MAXELEMENTLENGTH 3
 #endif
 		int l = MAXELEMENTLENGTH;
-		map<int, vector<typename BinaryTree<Type>::TreeNode*>> nodes;
+		map<int, vector<typename Tree<Type>::Node*>> nodes;
 
 		//Initializing the node map
 		{
-		Queue<typename BinaryTree<Type>::TreeNode*> queue;
+		Queue<typename Tree<Type>::Node*> queue;
 				queue.Enqueue(tree.root);
 				int nodeCnt   = 0;
 				int maxNodes  = 1;
@@ -2469,14 +3413,14 @@ class CachedForwardList
 				{//if I can know the length of printing element,
 				 //I can justify the length to make every element the same length.
 					os << nodes[level][ele]->value;
-// 					auto lEle = GetLenOfElement(nodes[level][ele]->value);
-// 					if (lEle < l || lEle != 0)
-// 					{
-// 						for (int i = 0; i < l - lEle; ++i)
-// 						{
-// 							os << " ";
-// 						}
-// 					}
+					auto lEle = GetLenOfElement(nodes[level][ele]->value);
+					if (lEle < l || lEle != 0)
+					{
+						for (int i = 0; i < l - lEle; ++i)
+						{
+							os << " ";
+						}
+					}
 				}
 				else
 				{
@@ -2495,20 +3439,8 @@ class CachedForwardList
 		return os;
 	}
 
-	template<class Type>
-	ostream& operator<<(ostream& os, const CachedForwardList<Type>& list)
-	{
-		auto iter = list.Begin();
-		while (iter != list.End())
-		{
-			os << *iter << " ";
-			++iter;
-		}
-		return os;
-	}
-
-	template<class Iterator, class Type>
-	Iterator Find(Iterator begin, Iterator end, const Type& target)
+	template<class Iterator, class Type, class = decltype(declval<Type>() == declval<Type>())>
+	inline Iterator Find(Iterator begin, Iterator end, const Type& target)
 	{
 		while (begin != end)
 		{
@@ -2518,8 +3450,8 @@ class CachedForwardList
 		return begin;
 	}
 
-	template<class Iterator, class Type>
-	Iterator Find(Iterator begin, Iterator end, Type&& target)
+	template<class Iterator, class Type, class = decltype(declval<Type>() == declval<Type>())>
+	inline Iterator Find(Iterator begin, Iterator end, Type&& target)
 	{
 		while (begin != end)
 		{
@@ -2530,3 +3462,4 @@ class CachedForwardList
 	}
 
 }
+#endif // Structures_h__

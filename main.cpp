@@ -7,7 +7,9 @@
 #include "Structures.h"
 #include "Functor.h"
 #include <list>
+#include <corecrt_malloc.h>
 using namespace std;
+using namespace Struct;
 
 void test001(		 )
 {
@@ -129,17 +131,52 @@ void test005(uint len)
 }
 void test006(uint len)
 {
-	function<void(void)> f = [&]()
-	{
-		Struct::BinaryTree<int> bt1;
-		for (int i = 0; i < len; ++i)
+// 	cout << "Adding " << len << " element(s) to a binary tree costs " << Timer<milliseconds>([&]()
+// 		{
+// 			Struct::BinaryTree<int> bt1;
+// 			for (int i = 0; i < len; ++i)
+// 			{
+// 				bt1.Add(i);
+// 			}
+// 		}).time << " ms." << endl;
+
+	srand(0);
+	BinarySearchTree<int> bst1;
+	CachedForwardList<int> cfl1;
+	cout << "Adding " << len << " element(s) to a BinarySearchTree costs " << Timer<milliseconds>([&]()
 		{
-			bt1.Add(i);
-		}
-#define MAXELEMENTLENGTH 6;
-		cout << bt1 << endl;
-	};
-	cout << "Adding " << len << " element(s) to a binary tree costs " << Timer<milliseconds>(f).time  << " ms." << endl;
+			for (int i = 0; i < len; ++i)
+			{
+				bst1.Insert(rand() % len);
+			}
+		}).time << " ms." << endl;
+
+	//cout << bst1 << endl;
+	srand(0);
+	cout << "Removing " << len << " element(s) to a BinarySearchTree costs " << Timer<milliseconds>([&]()
+		{
+			for (int i = 0; i < len; ++i)
+			{
+				bst1.Remove(rand() % len);
+			}
+		}).time << " ms." << endl;
+
+	cout << "Adding " << len << " element(s) to a CachedForwardList costs " << Timer<milliseconds>([&]()
+		{
+			for (int i = 0; i < len; ++i)
+			{
+				cfl1.PushBack(rand() % len);
+			}
+		}).time << " ms." << endl;
+
+	srand(0);
+	cout << "Removing " << len << " element(s) to a CachedForwardList costs " << Timer<milliseconds>([&]()
+		{
+			for (int i = 0; i < len; ++i)
+			{
+				cfl1.PopFront();
+			}
+		}).time << " ms." << endl;
 	
 }
 void test007(uint len)
@@ -244,14 +281,21 @@ void test007(uint len)
 	
 }
 
-
+template<class T>
+class TestClass2 {public: T* root; };
 
 int main()
 {
-	test007(10000);
+	BinarySearchTree<int> bst1 = {1, 2, 3};
 
-	
+	BinarySearchTree<int> bst2;
+
+	ThreadedBinaryTree<int> tbt = {10, 5, 15, 3, 8, 13, 19};
+
+	BinaryHeap<int> bh1{21, 32, 34, 12, 32, 11, 9};
+
+
+
 	return 0;
-
 }
 

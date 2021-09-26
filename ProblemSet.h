@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef ProblemSet_h__
+#define ProblemSet_h__
+
 #include <string>
 #include <array>
 #include <iostream>
@@ -233,7 +236,7 @@ namespace Problems
 		return ret;
 	}
 
-	bool ExistMaxSubset(vector<int> set, int maxSum, int size)
+	bool ExistmaxSubset(vector<int> set, int maxSum, int size)
 	{
 		sort(set.begin(), set.end());
 		for (int i = 0; i < size; ++i)
@@ -309,7 +312,7 @@ namespace Problems
 			for (int j = i + 1; j < sequence.size(); ++j)
 			{
 				bp[i][j] = bp[i][j - 1] + sequence[j];
-				ret = Max(ret, bp[i][j]);
+				ret = max(ret, bp[i][j]);
 			}
 		}
 		return ret;
@@ -332,16 +335,16 @@ namespace Problems
 				for (int i = (int)middle; i >= (int)begin; --i)
 				{
 					leftSum += sequence[i];
-					maxLeftSum = Max(maxLeftSum, leftSum);
+					maxLeftSum = max(maxLeftSum, leftSum);
 				}
 				int rightSum = 0, maxRightSum = 0;
 				for (int i = int(middle + 1); i <= (int)end; ++i)
 				{
 					rightSum += sequence[i];
-					maxRightSum = Max(maxRightSum, rightSum);
+					maxRightSum = max(maxRightSum, rightSum);
 				}
 				//cout << begin << " " << end << " " << left << " " << maxLeftSum << " " << maxRightSum << " " << right << endl;
-				return Max(Max(left, right), size_t(maxLeftSum + maxRightSum));
+				return max(max(left, right), size_t(maxLeftSum + maxRightSum));
 			}
 		};
 		return GetMaxSubsequence()(sequence, 0, sequence.size() - 1);
@@ -354,8 +357,8 @@ namespace Problems
 		for (int i = 0; i < sequence.size(); ++i)
 		{
 			thiSum += sequence[i];
-			maxSum = Max(thiSum, maxSum);
-			thiSum = Max(0, thiSum);
+			maxSum = max(thiSum, maxSum);
+			thiSum = max(0, thiSum);
 		}
 		return maxSum;
 	}
@@ -372,26 +375,26 @@ namespace Problems
 		return m;
 	}
 
-	int GetMinSumOfSubsequence(const vector<int>& sequence)
+	int GetminSumOfSubsequence(const vector<int>& sequence)
 	{
 		int minSum = INT_MAX, thiSum = 0;
 		for (int i = 0; i < sequence.size(); ++i)
 		{
 			thiSum += sequence[i];
-			minSum = Min(thiSum, minSum);
-			thiSum = Min(thiSum, 0);
+			minSum = min(thiSum, minSum);
+			thiSum = min(thiSum, 0);
 		}
 		return minSum;
 	}
 
-	int GetMaxProductOfSubsequence(const vector<int>& sequence)
+	int GetmaxProductOfSubsequence(const vector<int>& sequence)
 	{
 		int maxProduct = sequence[0], thisProduct = sequence[0];
 		for (int  i = 1; i < sequence.size(); ++i)
 		{
 			thisProduct *= sequence[i];
-			maxProduct = Max(maxProduct, thisProduct);
-			thisProduct = Max(thisProduct, sequence[i]);
+			maxProduct = max(maxProduct, thisProduct);
+			thisProduct = max(thisProduct, sequence[i]);
 		}
 		return maxProduct;
 	}
@@ -584,3 +587,4 @@ namespace Problems
 
 
 }
+#endif // ProblemSet_h__

@@ -1,8 +1,12 @@
 #pragma once
+#ifndef AlogoEasy_h__
+#define AlogoEasy_h__
+
 
 #include <vector>
 #include <string>
 #include <iostream>
+#include "Difinitions.h"
 
 namespace Alogo {
 	using namespace std;
@@ -111,8 +115,24 @@ namespace Alogo {
 		}
 		return cnt;
 	}
+	uint		FibNumber(uint n)
+	{
+		uint *dp = new uint[n + 1]();
 
+		dp[0] = 0;
+		dp[1] = 1;
+
+		for (int i = 2; i <= n; ++i)
+		{
+			dp[i] = dp[i - 1] + dp[i - 2];
+		}
+
+		auto ret = dp[n];
+		delete[] dp;
+		return ret;
+	}
 
 
 
 }
+#endif // AlogoEasy_h__

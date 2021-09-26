@@ -1,39 +1,44 @@
 #pragma once
+
+#ifndef Helper_h__
+#define Helper_h__
+
 #include <chrono>
-#include "TypeTraits.h"
+#include "Limits.h"
 #include <iostream>
 #include <functional>
 using namespace std;
 using namespace chrono;
 typedef long long LL;
 
-
-#define min(lhs, rhs) (lhs) < (rhs) ? (lhs) : (rhs)
-#define max(lhs, rhs) (lhs) > (rhs) ? (lhs) : (rhs)
-
-template<class Type>
-constexpr Type Max(Type val)
+template<class Type, class... Types>
+constexpr auto max(Type lhs, Types... others)
 {
-	return val;
+	if constexpr (sizeof...(others) == 0)
+	{
+		return lhs;
+	}
+	else
+	{
+		auto m = max(others...);
+		return lhs > m ? lhs : m;
+	}
 }
 
 template<class Type, class... Types>
-constexpr auto Max(Type lhs, Types... others)
+constexpr auto min(Type lhs, Types... others)
 {
-	return max(lhs, Max(others...));
+	if constexpr (sizeof...(others) == 0)
+	{
+		return lhs;
+	}
+	else
+	{
+		auto m = min(others...);
+		return lhs < m ? lhs : m;
+	}
 }
 
-template<class Type>
-constexpr Type Min(Type val)
-{
-	return val;
-}
-
-template<class Type, class... Types>
-constexpr auto Min(Type lhs, Types... others)
-{
-	return min(lhs, Min(others...));
-}
 
 template<class Duration>
 class Timer
@@ -100,3 +105,23 @@ size_t GetLenOfElement(int ele)
 		return 1;
 }
 
+
+template<class Type>
+struct Less
+{
+	bool operator()(const Type& lhs, const Type& rhs)
+	{
+		return lhs < rhs;
+	}
+};
+
+template<class Type>
+struct Greater
+{
+	bool operator()(const Type& lhs, const Type& rhs)
+	{
+		return lhs > rhs;
+	}
+};
+
+#endif // Helper_h__
