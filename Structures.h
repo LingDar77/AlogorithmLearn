@@ -3274,6 +3274,7 @@ public:
 	private:
 
 
+
 	public:
 
 		BinaryHeap() = default;
@@ -3288,21 +3289,69 @@ public:
 
 		void Insert(const Type& value)
 		{
-			int loc = data.Size();
+			int location = data.Size();
 			data.PushBack(value);
-
-			//Percolating up until we find the right place for the new element
-			int parLoc = loc / 2;
-			while (CompareObject<Type>()(data[loc], data[parLoc]))
+			int parLoc = (location - 1) / 2;
+			while (parLoc >= 0 && CompareObject<Type>()(data[location], data[parLoc]))
 			{
-				swap(data[parLoc], data[loc]);
-				loc = parLoc;
-				parLoc /= 2;
+				swap(data[parLoc], data[location]);
+				location = parLoc;
+				parLoc = (location - 1) / 2;
 			}
 
 		}
+			
+		Type RemoveRoot()
+		{
+			auto size = data.Size();
+			assert(size, "Fault: Can Not Remove A Root From An Empty Heap!");
 
+			swap(data[0], data[size - 1]);
+			int curr = 0, child = 1;
+			while (child < size - 1)
+			{
+				if (child != size - 2 && CompareObject<Type>()(data[child + 1], data[child]))
+					++child;
+				if(CompareObject<Type>()(data[child], data[curr]))
+					swap(data[child], data[curr]);
+				else
+					break;
+				curr = child;
+				child = curr * 2 + 1;
+			}
+			data.Resize(size - 1);
+			return data[size - 1];
+		}
 
+		bool IsEmpty() const
+		{
+			return data.IsEmpty();
+		}
+
+		size_t Size() const
+		{
+			return data.Size();
+		}
+		
+		void Check(int root = 0)
+		{
+			int left = root * 2 + 1, right = left + 1;
+			if (left < Size())
+			{
+				if (CompareObject<Type>()(data[left], data[root]))
+					cout << "Invalid Node Detected At Root: " << root << endl;
+			}
+			elif(right < Size())
+			{
+				if (CompareObject<Type>()(data[right], data[root]))
+					cout << "Invalid Node Detected At Root: " << root << endl;
+			}
+			else
+				return;
+			Check(left);
+			Check(right);
+		}
+	
 	};
 
 
