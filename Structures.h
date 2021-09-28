@@ -291,15 +291,19 @@ namespace Struct
 
 		const Type& operator[](size_t index) const
 		{
+			if (index > Capacity())
+				Resize(index + 1);
 			return *(content + index);
 		}
 
 		Type& operator[](size_t index)
 		{
+			if(index > Capacity())
+				Resize(index + 1);
 			return *(content + index);
 		}
 
-		void Erase(Iterator It)
+		void Remove(Iterator It)
 		{
 			auto end = End() - 1;
 			while (It != end)
@@ -311,7 +315,7 @@ namespace Struct
 			Resize(size - 1);
 		}
 
-		void Erase(size_t index)
+		void Remove(size_t index)
 		{
 			for (int i = index; i < Size() - 1; ++i)
 			{
@@ -326,20 +330,25 @@ namespace Struct
 			if (newSize > Capacity() || newSize < Capacity() / 3)
 				Reserve(newSize);
 			size = newSize;
-			
 		}
 
 		void Reserve(size_t newCapacity)
 		{
 			size_t newCap = Capacity();
-			if(newCapacity > newCap)
+			if (newCapacity > newCap)
 				newCap = (newCapacity / newCap + 1) * newCap;
-			elif(newCapacity < newCap / 3)
+			elif(newCapacity < MINCAPACITY)
+				newCap = MINCAPACITY;
+			elif(newCapacity < newCap / 4)
 				newCap = newCap / 2;
+			else
+				return;
+
+			//copy the original data and adjust capacity.
 			if (content)
-			{//copy the original data and adjust capacity.
+			{
 				Type* newContent = new Type[newCap + 1]();
-				for (size_t i = 0; i < size; ++i)
+				for (size_t i = 0; i < ::min(size, newCap + 1); ++i)
 				{
 					swap(*(content + i), *(newContent + i));
 				}
@@ -405,8 +414,18 @@ namespace Struct
 			return *(content + Size());
 		}
 
-		
-	};
+		void Swap(size_t lhs, size_t rhs)
+		{
+			assert(lhs < Capacity() && rhs < Capacity());
+			swap(*(content + lhs), *(content + rhs));
+		}
+	
+		void Clear()
+		{
+			Resize(0);
+		}
+
+};
 
 	template<class Type>
 	class LinkedList
@@ -689,7 +708,7 @@ namespace Struct
 			return size;
 		}
 
-		Iterator Erase(Iterator it)
+		Iterator Remove(Iterator it)
 		{
 			auto prev = it - 1;
 			auto next = it + 1;
@@ -1267,7 +1286,7 @@ public:
 			return Insert(Begin() + index, value);
 		}
 
-		void Erase(Iterator it)
+		void Remove(Iterator it)
 		{
 			auto next = it + 1;
 			*it = *next;
@@ -1277,9 +1296,9 @@ public:
 			
 		}
 
-		void Erase(size_t index)
+		void Remove(size_t index)
 		{
-			Erase(Begin() + index);
+			Remove(Begin() + index);
 		}
 
 };
@@ -3271,10 +3290,6 @@ public:
 
 		Vector<Type> data;
 
-	private:
-
-
-
 	public:
 
 		BinaryHeap() = default;
@@ -3354,10 +3369,415 @@ public:
 	
 	};
 
+	template<class Type, template<class>class CompareObject = Less>
+	class LeftistHeap
+	{
+		template<template<class, template<class> class> class Tree, class Type, template<class> class CompareObject>
+		friend inline auto operator<<(ostream& os, const Tree<Type, CompareObject>& tree)->
+			decltype(tree.root, declval<ostream&>() << declval<Type>(), os);
+	private:
+
+		struct Node
+		{
+			Type   value;
+			Node*  left;
+			Node*  right;
+			size_t npl;  //Null Pointer Path Length
+
+			Node(const Type& value, Node* left = nullptr, Node* right = nullptr)
+				:value(value), left(left), right(right) 
+			{
+				if (left && right)
+					npl = ::min(left->npl, right->npl) + 1; 
+				elif(left && !right)
+					npl = left->npl + 1;
+				elif(right && !left)
+					npl = right->npl + 1;
+				else
+					npl = 0;
+			}
+		
+			Node(Type&& value, Node* left = nullptr, Node* right = nullptr)
+				:value(move(value)), left(left), right(right)
+			{
+				if (left && right)
+					npl = ::min(left->npl, right->npl) + 1;
+				elif(left && !right)
+					npl = left->npl + 1;
+				elif(right && !left)
+					npl = right->npl + 1;
+				else
+					npl = 0;
+			}
+		
+		};
+
+	private:
+
+		Node*  root;
+		size_t size;
+
+	private:
+
+		void Clear(Node* root)
+		{
+			if (!root) return;
+			if (root->left) Clear(root->left);
+			if (root->right) Clear(root->right);
+			delete root;
+		}
+		
+		Node* MergeTo(Node* smaller, Node* bigger)
+		{
+			if (!smaller->left)
+				smaller->left = bigger;
+			else
+			{
+				smaller->right = Merge(smaller->right, bigger);
+				if (smaller->left->npl < smaller->right->npl)
+				{
+					auto prev = smaller->left;
+					smaller->left = smaller->right;
+					smaller->right = prev;
+				}
+				smaller->npl = smaller->right->npl + 1;
+			}
+			return smaller;
+		}
+
+		Node* Merge(Node* lhs, Node* rhs)
+		{
+			if (!lhs)
+				return rhs;
+			if (!rhs)
+				return lhs;
+			if (CompareObject<Type>()(lhs->value, rhs->value))
+				return MergeTo(lhs, rhs);
+			else
+				return MergeTo(rhs, lhs);
+		}
+
+		void Check(Node* root)
+		{
+			auto left = root->left, right = root->right;
+			if (!left)
+			{
+				if (CompareObject<Type>()(left->value, root->value))
+					cout << "Invalid Node Detected At Root: " << root << endl;
+			}
+			elif(!right)
+			{
+				if (CompareObject<Type>()(right->value, root->value))
+					cout << "Invalid Node Detected At Root: " << root << endl;
+			}
+			else
+				return;
+			Check(left);
+			Check(right);
+		}
+
+	public:
+
+		LeftistHeap()
+			:root(nullptr), size(0) {  }
+
+		~LeftistHeap()
+		{
+			Clear(root);
+		}
+
+		LeftistHeap(initializer_list<Type>&& il)
+		{
+			for (auto iter = il.begin(); iter != il.end(); ++iter)
+			{
+				Insert(*iter);
+			}
+		}
+
+		void Merge(LeftistHeap& rhs)
+		{
+			if (&rhs == this || !rhs.root) return;
+			if(rhs.root)
+				this->size += rhs.size;
+			root = Merge(this->root, rhs.root);
+			rhs.root = nullptr;
+			rhs.size = 0;
+		}
+
+		void Insert(const Type& value)
+		{
+			root = Merge(root, new Node(value));
+			++size;
+		}
+
+		void Insert(Type&& value)
+		{
+			root = Merge(new Node(move(value)), root);
+			++size;
+		}
+
+		Type RemoveRoot()
+		{
+			assert(root);
+			auto ret = move(root->value);
+			auto newRoot = Merge(root->left, root->right);
+			delete root;
+			root = newRoot;
+			--size;
+			return ret;
+		}
+
+		void Check()
+		{
+			Check(root);
+		}
+
+	};
+
+	template<class Type, template<class>class CompareObject = Less>
+	class SkewHeap
+	{
+
+	};
+
+	template<class Type, template<class>class CompareObject = Less>
+	class BinomialQueue
+	{
+	private:
+
+		struct Node
+		{
+			Type  value;
+			Node* child;
+			Node* next;
+
+			Node(const Type& value, Node* child = nullptr, Node* next = nullptr)
+				:value(value), child(child), next(next) {  }
+
+			Node(Type&& value, Node* child = nullptr, Node* next = nullptr)
+				:value(move(value)), child(child), next(next) {  }
+
+		};
+	
+	private:
+		
+		Vector<Node*> roots;
+
+	private:
+
+		Node* MergeRoots(Node* lhs, Node* rhs)
+		{
+			if (!lhs)
+				return rhs;
+			if (!rhs)
+				return lhs;
+			if (CompareObject<Type>()(rhs->value, lhs->value))
+			{
+				return MergeRoots(rhs, lhs);
+			}
+			rhs->next = lhs->child;
+			lhs->child = rhs;
+			return lhs;
+		}
+
+		void Print(Node* root)
+		{
+			if (!root)
+				return;
+			cout << root->value << " ";
+			Print(root->child);
+			Print(root->next);
+
+		}
+
+		void Clear(Node*& root)
+		{
+			if (!root)
+				return;
+			Clear(root->child);
+			Clear(root->next);
+			delete root;
+			root = nullptr;
+		}
+
+	public:
+
+		BinomialQueue() {}
+
+		~BinomialQueue()
+		{
+			for (auto iter = this->roots.Begin(); iter != this->roots.End(); ++iter)
+			{
+				Clear(*iter);
+			}
+		}
+
+		BinomialQueue(initializer_list<Type>&& il)
+			:BinomialQueue()
+		{
+			for (auto iter = il.begin(); iter < il.end(); ++iter)
+			{
+				Insert(*iter);
+			}
+		}
+
+		void Clear()
+		{
+			for (auto iter = this->roots.Begin(); iter != this->roots.End(); ++iter)
+			{
+				Clear(*iter);
+			}
+			this->roots.Resize(0);
+		}
+
+		size_t Size() const
+		{
+			return this->roots.Size();
+		}
+
+		void Merge(BinomialQueue& rhs)
+		{
+			if (&rhs == this) return;
+			size_t cap = ::max(rhs.Size(), this->Size());
+			Node* prev = nullptr;
+			for (size_t i = 0; i < cap; ++i)
+			{
+				auto ret = MergeRoots(this->roots[i], rhs.roots[i]);
+				if (!this->roots[i] && !rhs.roots[i])
+				{//ret ranks 0
+					ret = MergeRoots(ret, prev);
+					//ret ranks 0 or i.
+					this->roots[i] = ret;
+					prev = nullptr;
+				}
+				elif(!this->roots[i] || !rhs.roots[i])
+				{//ret ranks i
+					if (prev)
+					{
+						prev = MergeRoots(ret, prev);
+						//prev ranks i + 1;
+						this->roots[i] = nullptr;
+						
+					}
+					else
+					{
+						this->roots[i] = ret;
+					}
+				}
+				else
+				{//ret ranks i + 1
+					this->roots[i] = prev;
+					prev = ret;
+				}
+				rhs.roots[i] = nullptr;
+
+			}
+			if (prev)
+			{
+				this->roots[cap] = prev;
+				this->roots.Resize(cap + 1);
+			}
+			else
+				this->roots.Resize(cap);
+		}
+
+		void Insert(const Type& value)
+		{
+			BinomialQueue<Type, CompareObject> que;
+			que.roots.PushBack(new Node(value));
+			Merge(que);
+		}
+
+		void Insert(Type&& value)
+		{
+			BinomialQueue<Type, CompareObject> que;
+			que.roots.PushBack(new Node(move(value)));
+			Merge(que);
+		}
+
+		Type Top()
+		{
+			for (size_t i = 0; i < this->roots.Size(); ++i)
+				if (this->roots[i])
+				{
+					auto ret = this->roots[i]->value;
+					for (size_t j = i + 1; j < this->roots.Size(); ++j)
+					{
+						if (this->roots[j])
+							if (CompareObject<Type>()(this->roots[j]->value, ret))
+							{
+								ret = this->roots[j]->value;
+							}
+					}
+					return ret;
+				}
+			assert(0);
+			return Type();
+			
+		}
+
+		Type RemoveRoot()
+		{
+			assert(this->roots.Size());
+			for (size_t i = 0; i < this->roots.Size(); ++i)
+				if (this->roots[i])
+				{
+					size_t index = i;
+					auto top = this->roots[index]->value;
+					for (size_t j = index + 1; j < this->roots.Size(); ++j)
+					{
+						if (this->roots[j])
+							if (CompareObject<Type>()(this->roots[j]->value, top))
+							{
+								top = this->roots[j]->value;
+								index = j;
+							}
+					}
+
+					Node* child = this->roots[index]->child;
+					Node* next = this->roots[index]->next;
+					this->roots[index] = nullptr;
+					size_t rank = !index ? index : index - 1;
+					BinomialQueue<Type, CompareObject> b1;
+					BinomialQueue<Type, CompareObject> b2;
+					b1.roots[rank] = child;
+					b2.roots[rank] = next;
+
+					Merge(b1);
+					Merge(b2);
+
+					return top;
+				}
+			assert(0);
+			return Type();
+		}
+
+		void Print()
+		{
+			for (auto iter = this->roots.Begin(); iter != this->roots.End(); ++iter)
+			{
+				Print(*iter);
+				cout << endl;
+			}
+		}
+	};
+
+	template<class Type, 
+		template<class> class CompareObject = Greater, 
+		template<class, template<class> class> class Basement = BinaryHeap>
+	class PriorityQueue
+	{
+	private:
+
+		Basement<Type, CompareObject> data;
+
+	};
+
+
 
 	//Operation Methods
 
-	//For LinearLists with Iterators
+	//For LinearLists Or Types With Iterators
 	template<template<class> class LinearList, class Type>
 	inline auto operator<<(ostream& os, const LinearList<Type>& list)->
 		decltype(list.Begin(), list.End(), declval<ostream&>() << declval<Type>(), os)
@@ -3371,7 +3791,7 @@ public:
 	//In order to control the element length that printed on screen,
 	//you can define the macro MAXELEMENTLENGTH to control the probable length in your btree,
 	//this macro will be defined as 3 if you ignore it,
-	//but this value better be a odd number 
+	//but this value should better be a odd number 
 	template<template<class> class Tree, class Type>
 	inline auto operator<<(ostream& os, const Tree<Type>& tree)->
 		decltype(tree.root, declval<ostream&>() << declval<Type>(), os)
@@ -3487,6 +3907,115 @@ public:
 
 		return os;
 	}
+
+	template<template<class, template<class> class> class Tree, class Type, template<class> class CompareObject>
+	inline auto operator<<(ostream& os, const Tree<Type, CompareObject>& tree)->
+		decltype(tree.root, declval<ostream&>() << declval<Type>(), os)
+	{
+		if (!tree.size) return os << "NOE";
+#ifndef MAXELEMENTLENGTH
+#define MAXELEMENTLENGTH 3
+#endif
+		int l = MAXELEMENTLENGTH;
+		map<int, vector<typename Tree<Type, CompareObject>::Node*>> nodes;
+
+		//Initializing the node map
+		{
+			Queue<typename Tree<Type, CompareObject>::Node*> queue;
+			queue.Enqueue(tree.root);
+			int nodeCnt = 0;
+			int maxNodes = 1;
+			int currLevel = 0;
+			int nullCnt = 0;
+			while (1)
+			{
+				auto curr = queue.Dequeue();
+				nodes[currLevel].push_back(curr);
+				if (curr)
+				{
+					queue.Enqueue(curr->left);
+					queue.Enqueue(curr->right);
+				}
+				else
+				{
+					queue.Enqueue(nullptr);
+					queue.Enqueue(nullptr);
+					nullCnt += 2;
+				}
+
+				++nodeCnt;
+				if (nullCnt == maxNodes * 2)
+				{
+					break;
+				}
+				if (nodeCnt == maxNodes)
+				{
+					++currLevel;
+					maxNodes *= 2;
+					nodeCnt = 0;
+					nullCnt = 0;
+				}
+			}
+		}
+
+		int h = nodes.size();
+		//before doing this, we'd better keep l a odd number;
+		int metaL = (l + 1) / 2;
+
+		//Stored the number of space bar of every level should have
+		vector<int> SpaceBarMap(h, 1);
+		//Stored the length of alignment of every level
+		vector<int> AlginmentMap(h, 0);
+		//Initializing the two maps
+		for (int i = h - 2; i >= 0; --i)
+		{
+			AlginmentMap[i] = 2 * AlginmentMap[i + 1] + 1;
+			SpaceBarMap[i] = (SpaceBarMap[i + 1]) * 2 + l;
+			AlginmentMap[i + 1] *= metaL;
+		}
+		AlginmentMap[0] *= metaL;
+
+
+		//Finally print the whole tree with the help of these maps
+		for (int level = 0; level < h; ++level)
+		{
+			for (int al = 0; al < AlginmentMap[level]; ++al)
+			{
+				os << " ";
+			}
+			for (int ele = 0; ele < nodes[level].size(); ++ele)
+			{
+				if (nodes[level][ele])
+				{//if I can know the length of printing element,
+				 //I can justify the length to make every element the same length.
+					os << nodes[level][ele]->value;
+					auto lEle = GetLenOfElement(nodes[level][ele]->value);
+					if (lEle < l || lEle != 0)
+					{
+						for (int i = 0; i < l - lEle; ++i)
+						{
+							os << " ";
+						}
+					}
+				}
+				else
+				{
+					os << "NOE";
+				}
+				for (int sp = 0; sp < SpaceBarMap[level]; ++sp)
+				{
+					os << " ";
+				}
+			}
+			os << endl;
+		}
+
+
+
+		return os;
+	}
+
+
 
 	template<class Iterator, class Type, class = decltype(declval<Type>() == declval<Type>())>
 	inline Iterator Find(Iterator begin, Iterator end, const Type& target)

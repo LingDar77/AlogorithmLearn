@@ -580,7 +580,33 @@ namespace Problems
 		return maxValue / minValue;
 	}
 
-	
+	int FindTheKthNumber(vector<int> sequence, int k)
+	{
+		assert(sequence.size() > k);
+		vector<int> ret(k, 0);
+		for (int i = 0; i < k; ++i)
+		{
+			ret[i] = sequence[i];
+		}
+		sort(ret.begin(), ret.end(), Greater<int>());
+
+		for (int i = 0; i < sequence.size(); ++i)
+		{
+			int loc = k - 1;
+			if (sequence[i] > ret[loc])
+			{
+				ret[loc] = sequence[i];
+				while(loc > 0 && ret[loc - 1] < ret[loc])
+				{
+					swap(ret[loc - 1], ret[loc]);
+					--loc;
+				}
+			}
+		}
+
+		return ret[k - 1];
+
+	}
 
 
 

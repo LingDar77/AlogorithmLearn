@@ -292,34 +292,16 @@ int main()
 
 	ThreadedBinaryTree<int> tbt = {10, 5, 15, 3, 8, 13, 19};
 
-	Vector<int> v1;
+	Vector<int*> v1;
 
-	BinaryHeap<int> bh1;
+	BinaryHeap<int, Greater> bh1;
 
-	int sample = 10000;
+	LeftistHeap<int, Greater> lh1 = {3, 10, 21, 14, 23, 8};
+	LeftistHeap<int, Greater> lh2 = {6, 12, 18, 24, 33, 7};
 
-	for (int i = 0; i < sample; ++i)
-	{
-		bh1.Insert(rand() % 50000);
-		//bh1.Check();
-		//cout << i << " , " << bh1.data << endl;
-	}
-	//cout << bh1.data << endl;
-	cout << "Insert Complete." << endl;
+	lh1.Merge(lh2);
 
-	int prev = INT_MIN;
-	for (int i = 0; i < sample; ++i)
-	{
-		auto curr = bh1.RemoveRoot();
-		cout << i << "," << curr << endl;
-		//cout << bh1.data << endl;
-		if (prev > curr)
-		{
-			cout << "incorrect at " << i << endl;
-		}
-		//bh1.Check();
-		prev = curr;
-	}
+	BinomialQueue<int> bq1;
 
 
 	return 0;

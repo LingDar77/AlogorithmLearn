@@ -9,7 +9,6 @@
 #include <functional>
 using namespace std;
 using namespace chrono;
-typedef long long LL;
 
 template<class Type, class... Types>
 constexpr auto max(Type lhs, Types... others)
