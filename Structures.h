@@ -398,20 +398,20 @@ namespace Struct
 			*content = move(value);
 		}
 
-		Type PopBack()
+		Type&& PopBack()
 		{
 			Resize(Size() - 1);
-			return *(content + Size());
+			return move(*(content + Size()));
 		}
 
-		Type PopFront()
+		Type&& PopFront()
 		{
 			for (int i = 0; i != Size() - 1; ++i)
 			{
 				swap(*(content + i), *(content + i + 1));
 			}
 			Resize(Size() - 1);
-			return *(content + Size());
+			return move(*(content + Size()));
 		}
 
 		void Swap(size_t lhs, size_t rhs)
@@ -536,6 +536,17 @@ namespace Struct
 				return it;
 			}
 
+			size_t operator-(ConstIterator rhs)
+			{
+				size_t ret = 0;
+				while (rhs != *this)
+				{
+					++rhs;
+					++ret;
+				}
+				return ret;
+			}
+
 			bool operator==(const ConstIterator& rhs) const
 			{
 				return rhs.cur == cur;
@@ -604,6 +615,17 @@ namespace Struct
 					--step;
 				}
 				return it;
+			}
+
+			size_t operator-(Iterator rhs)
+			{
+				size_t ret = 0;
+				while (rhs != *this)
+				{
+					++rhs;
+					++ret;
+				}
+				return ret;
 			}
 
 			Type& operator*()
@@ -959,6 +981,17 @@ namespace Struct
 				
 			}
 
+			size_t operator-(ConstIterator rhs)
+			{
+				size_t ret = 0;
+				while (rhs != *this)
+				{
+					++rhs;
+					++ret;
+				}
+				return ret;
+			}
+
 			ConstIterator operator+(size_t step)
 			{
 				auto cur = *this;
@@ -1040,12 +1073,20 @@ namespace Struct
 
 			Iterator& operator--()
 			{
-				return ConstIterator::operator--();
+				auto h = this->list->head;
+				while (h->next != this->curr)
+				{
+					h = h->next;
+				}
+				this->curr = h;
+				return *this;
 			}
 
 			Iterator operator--(int)
 			{
-				return ConstIterator::operator--(1);
+				auto old = *this;
+				--(*this);
+				return old;
 			}
 
 			Iterator operator+(size_t step)
@@ -1062,6 +1103,17 @@ namespace Struct
 			Iterator operator-(size_t step)
 			{
 				return Backward(*this, step);
+			}
+
+			size_t operator-(Iterator rhs)
+			{
+				size_t ret = 0;
+				while (rhs != *this)
+				{
+					++rhs;
+					++ret;
+				}
+				return ret;
 			}
 
 			bool operator==(const Iterator& rhs)
@@ -1413,6 +1465,17 @@ public:
 				}
 				return cpy;
 			}
+			
+			size_t operator-(ConstIterator rhs)
+			{
+				size_t ret = 0;
+				while (rhs != *this)
+				{
+					++rhs;
+					++ret;
+				}
+				return ret;
+			}
 
 			bool operator==(const ConstIterator& rhs)
 			{
@@ -1495,6 +1558,17 @@ public:
 				return cpy;
 			}
 			
+			size_t operator-(Iterator rhs)
+			{
+				size_t ret = 0;
+				while (rhs != *this)
+				{
+					++rhs;
+					++ret;
+				}
+				return ret;
+			}
+
 			bool operator==(const Iterator& rhs)
 			{
 				return &this->size == &rhs.size && this->curr == rhs.curr;
@@ -3316,7 +3390,7 @@ public:
 
 		}
 			
-		Type RemoveRoot()
+		Type&& RemoveRoot()
 		{
 			auto size = data.Size();
 			assert(size, "Fault: Can Not Remove A Root From An Empty Heap!");
@@ -3335,7 +3409,12 @@ public:
 				child = curr * 2 + 1;
 			}
 			data.Resize(size - 1);
-			return data[size - 1];
+			return move(data[size - 1]);
+		}
+
+		Type Top()
+		{
+			return data[0];
 		}
 
 		bool IsEmpty() const
@@ -3516,7 +3595,7 @@ public:
 			++size;
 		}
 
-		Type RemoveRoot()
+		Type&& RemoveRoot()
 		{
 			assert(root);
 			auto ret = move(root->value);
@@ -3524,7 +3603,12 @@ public:
 			delete root;
 			root = newRoot;
 			--size;
-			return ret;
+			return move(ret);
+		}
+
+		Type Top()
+		{
+			return root->value;
 		}
 
 		void Check()
@@ -3672,6 +3756,7 @@ public:
 				rhs.roots[i] = nullptr;
 
 			}
+			rhs.Clear();
 			if (prev)
 			{
 				this->roots[cap] = prev;
@@ -3716,18 +3801,18 @@ public:
 			
 		}
 
-		Type RemoveRoot()
+		Type&& RemoveRoot()
 		{
 			assert(this->roots.Size());
 			for (size_t i = 0; i < this->roots.Size(); ++i)
 				if (this->roots[i])
 				{
 					size_t index = i;
-					auto top = this->roots[index]->value;
+					auto top = this->roots[index];
 					for (size_t j = index + 1; j < this->roots.Size(); ++j)
 					{
 						if (this->roots[j])
-							if (CompareObject<Type>()(this->roots[j]->value, top))
+							if (CompareObject<Type>()(this->roots[j]->value, top->value))
 							{
 								top = this->roots[j]->value;
 								index = j;
@@ -3746,7 +3831,7 @@ public:
 					Merge(b1);
 					Merge(b2);
 
-					return top;
+					return move(top->value);
 				}
 			assert(0);
 			return Type();
@@ -3770,6 +3855,38 @@ public:
 	private:
 
 		Basement<Type, CompareObject> data;
+
+	public:
+
+		void Size() const
+		{
+			return data.Size();
+		}
+
+		void Clear()
+		{
+			data.Clear();
+		}
+
+		Type Top()
+		{
+			return data.Top();
+		}
+	
+		Type RemoveRoot()
+		{
+			return data.RemoveRoot();
+		}
+	
+		void Insert(const Type& value)
+		{
+			data.Insert(value);
+		}
+
+		void Insert(Type&& value)
+		{
+			data.Insert(move(value));
+		}
 
 	};
 

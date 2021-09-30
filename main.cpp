@@ -8,8 +8,10 @@
 #include "Functor.h"
 #include <list>
 #include <corecrt_malloc.h>
+#include "Algorithums.h"
 using namespace std;
 using namespace Struct;
+using namespace Algo;
 
 void test001(		 )
 {
@@ -282,27 +284,54 @@ void test007(uint len)
 }
 
 template<class T>
-class TestClass2 {public: T* root; };
+class TestClass2 
+{
+public: 
+	T* root; 
+};
+
+class testClass3
+{
+public:
+
+	testClass3()
+	{
+		cout << "default constructor called" << endl;
+	}
+
+	testClass3(const testClass3&)
+	{
+		cout << "copy constructor called" << endl;
+	}
+
+	testClass3(testClass3&&)
+	{
+		cout << "move constructor called" << endl;
+	}
+
+	testClass3& operator=(const testClass3&)
+	{
+		cout << "copy assignment called" << endl;
+	}
+
+	testClass3& operator=(testClass3&&)
+	{
+		cout << "move assignment called" << endl;
+	}
+};
+
+testClass3&& testa(testClass3& i)
+{
+	return move(i);
+}
 
 int main()
 {
-	BinarySearchTree<int> bst1 = {1, 2, 3};
+	ForwardList<int> v1 = { 53, 65, 42, 23, 1, 47 };
 
-	BinarySearchTree<int> bst2;
+	MergeSort(v1.Begin(), v1.End());
 
-	ThreadedBinaryTree<int> tbt = {10, 5, 15, 3, 8, 13, 19};
-
-	Vector<int*> v1;
-
-	BinaryHeap<int, Greater> bh1;
-
-	LeftistHeap<int, Greater> lh1 = {3, 10, 21, 14, 23, 8};
-	LeftistHeap<int, Greater> lh2 = {6, 12, 18, 24, 33, 7};
-
-	lh1.Merge(lh2);
-
-	BinomialQueue<int> bq1;
-
+	cout << v1 << endl;
 
 	return 0;
 }

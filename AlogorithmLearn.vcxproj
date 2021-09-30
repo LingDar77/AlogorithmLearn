@@ -144,6 +144,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Algorithums.h" />
     <ClInclude Include="AlogoEasy.h" />
     <ClInclude Include="Difinitions.h" />
     <ClInclude Include="Functor.h" />
