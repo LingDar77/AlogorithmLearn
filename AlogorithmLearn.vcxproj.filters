@@ -13,10 +13,19 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="头文件\Structs">
+      <UniqueIdentifier>{0cf51a39-15b5-40d5-a340-a16d94a5362c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector.h">
+      <Filter>头文件\Structs</Filter>
+    </ClCompile>
+    <ClCompile Include="CachedForwardList.h">
+      <Filter>头文件\Structs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -27,9 +36,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ProblemSet.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Structures.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Limits.h">
@@ -43,6 +49,54 @@
     </ClInclude>
     <ClInclude Include="Algorithums.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BitMap.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Number.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="LinkedList.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="ForwardList.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Stack.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Queue.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Deque.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="BinaryTree.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="BinarySearchTree.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BalancedBinarySearchTree.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadedTree.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="BinaryHeap.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="BinomialQueue.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="PriorityQueue.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="SPTree.h">
+      <Filter>头文件\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="Operations.hpp">
+      <Filter>头文件\Structs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

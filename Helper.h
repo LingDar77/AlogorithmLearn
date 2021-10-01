@@ -7,11 +7,13 @@
 #include "Limits.h"
 #include <iostream>
 #include <functional>
+#include <assert.h>
+
 using namespace std;
 using namespace chrono;
 
 template<class Type, class... Types>
-constexpr auto max(Type lhs, Types... others)
+constexpr const Type& max(const Type& lhs, const Types&... others)
 {
 	if constexpr (sizeof...(others) == 0)
 	{
@@ -19,13 +21,41 @@ constexpr auto max(Type lhs, Types... others)
 	}
 	else
 	{
-		auto m = max(others...);
+		const Type& m = ::max(others...);
 		return lhs > m ? lhs : m;
 	}
 }
 
 template<class Type, class... Types>
-constexpr auto min(Type lhs, Types... others)
+constexpr const Type& min(const Type& lhs, const Types&... others)
+{
+	if constexpr (sizeof...(others) == 0)
+	{
+		return lhs;
+	}
+	else
+	{
+		const Type& m = ::min(others...);
+		return lhs < m ? lhs : m;
+	}
+}
+
+template<class Type, class... Types>
+constexpr Type max(Type&& lhs, Types&&... others)
+{
+	if constexpr (sizeof...(others) == 0)
+	{
+		return lhs;
+	}
+	else
+	{
+		auto m = ::max(others...);
+		return lhs > m ? lhs : m;
+	}
+}
+
+template<class Type, class... Types>
+constexpr Type min(Type&& lhs, Types&&... others)
 {
 	if constexpr (sizeof...(others) == 0)
 	{
@@ -37,6 +67,7 @@ constexpr auto min(Type lhs, Types... others)
 		return lhs < m ? lhs : m;
 	}
 }
+
 
 
 template<class Duration>
@@ -70,40 +101,6 @@ public:
 		time = duration_cast<Duration>(end - start).count();
 	}
 };
-
-
-template<class Type>
-size_t GetLenOfElement(Type ele)
-{
-	return 0;
-}
-
-size_t GetLenOfElement(int ele)
-{
-	int cnt = 0;
-	if (ele > 0)
-	{
-		while (ele)
-		{
-			++cnt;
-			ele /= 10;
-		}
-		return cnt;
-	}
-	else if (ele < 0)
-	{
-		ele *= -1;
-		while (ele)
-		{
-			++cnt;
-			ele /= 10;
-		}
-		return cnt + 1;
-	}
-	else
-		return 1;
-}
-
 
 template<class Type>
 struct Less

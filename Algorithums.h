@@ -3,12 +3,12 @@
 #define Algorithums_h__
 
 #include "Helper.h"
-#include "Structures.h"
-
+#include "Vector.h"
+#include "Queue.h"
 
 namespace Algo
 {
-
+	using namespace Struct;
 	template<template<class> class CompareObject = Less,class Iterator>
 	void InsertionSort(Iterator begin, Iterator end)
 	{
@@ -22,7 +22,8 @@ namespace Algo
 			}
 		}
 	}
-
+	
+	//TODO
 	template<template<class> class CompareObject = Less, 
 		class Iterator,
 		class IncrementSequence>
@@ -123,7 +124,8 @@ namespace Algo
 	}
 
 	template<template<class> class CompareObject = Less, class Iterator>
-	void Merge(Iterator begin, Iterator mid, Iterator back, Struct::Vector<remove_reference_t<decltype(*begin)>>& temp)
+	void Merge(Iterator begin, Iterator mid, Iterator back,
+		Struct::Vector<remove_reference_t<decltype(*begin)>>& temp)
 	{
 		using Type = remove_reference_t<decltype(*begin)>;
 		size_t cnt = 0;
@@ -166,7 +168,8 @@ namespace Algo
 	}
 
 	template<template<class> class CompareObject = Less, class Iterator>
-	void MergeSort(Iterator begin, Iterator back, Struct::Vector<remove_reference_t<decltype(*begin)>>& temp)
+	void MergeSort(Iterator begin, Iterator back,
+		Struct::Vector<remove_reference_t<decltype(*begin)>>& temp)
 	{
 		if (begin == back) return;
 		auto mid = begin + ((back - begin) >> 1);
@@ -183,13 +186,16 @@ namespace Algo
 		using Type = remove_reference_t<decltype(*begin)>;
 		auto sz = end - begin;
 		Struct::Vector<Type> temp(sz, Type());
+		//Pretty awful when operator- works not well
 		MergeSort<CompareObject, Iterator>(begin, --end, temp);
 	}
 
 	template<template<class> class CompareObject = Less,
 		template<class> class Container,
 		class Type>
-	void MergeSort(Container<Type>& sequence, Struct::Vector<Type>& temp, size_t begin, size_t back)
+	void MergeSort(Container<Type>& sequence, 
+		Struct::Vector<Type>& temp, 
+		size_t begin, size_t back)
 	{
 		if (begin >= back) return;
 		auto mid = (begin + back) >> 1;
@@ -207,13 +213,65 @@ namespace Algo
 		auto sz = sequence.Size();
 		Struct::Vector<Type> temp(sz, Type());
 		MergeSort< CompareObject, Container, Type>(sequence, temp, 0, sz - 1);
+	} 
+
+	template<template<class> class CompareObject = Less,
+		template<class> class Container, class Type>
+	void QuickSort(Container<Type>& sequence, size_t begin, size_t back)
+	{
+		if (begin >= back) return;
+		auto mid = ((back + begin) >> 1);
+		
+		if (CompareObject<Type>()(sequence[mid], sequence[begin]))
+			swap(sequence[mid], sequence[begin]);
+		if (CompareObject<Type>()(sequence[back], sequence[begin]))
+			swap(sequence[back], sequence[begin]);
+		if (CompareObject<Type>()(sequence[back], sequence[mid]))
+			swap(sequence[back], sequence[mid]);
+		swap(sequence[mid], sequence[back - 1]);
+
+		if (mid == begin) return;
+
+		const Type& pivot = sequence[back - 1];
+		auto left = begin + 1;
+		auto right = back - 2;
+
+		while (1)
+		{
+			while (CompareObject<Type>()(sequence[left], pivot)) ++left;
+			while (CompareObject<Type>()(pivot, sequence[right])) --right;
+			if (left < right)
+				swap(sequence[left], sequence[right]);
+			else
+				break;
+		}
+
+		swap(sequence[back - 1], sequence[left]);
+		QuickSort<CompareObject>(sequence, begin, left - 1);
+		QuickSort<CompareObject>(sequence, left + 1, back);
 	}
 
 	template<template<class> class CompareObject = Less, class Iterator>
-	void QuickSort()
+	void QuickSort(Iterator begin, Iterator back, bool)
 	{
+		if (begin == end) return;
+		auto sz = back - begin;
 
 	}
 
+	template<template<class> class CompareObject = Less, class Iterator>
+	void QuickSort(Iterator begin, Iterator end) = delete;
+// 	{
+// 		//Pretty awful when operator- works not well
+// 		QuickSort<CompareObject>(begin, end - 1, true);
+// 	}
+
+	template<template<class> class CompareObject = Less,
+		template<class> class Container, class Type>
+	void QuickSort(Container<Type>& sequence)
+	{
+		QuickSort<CompareObject>(sequence, 0, sequence.Size() - 1);
+	}
+	
 };
 #endif // Algorithums_h__

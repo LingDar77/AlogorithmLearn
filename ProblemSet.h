@@ -6,11 +6,11 @@
 #include <string>
 #include <array>
 #include <iostream>
-#include "Structures.h"
 #include <map>
 #include <algorithm>
 #include <initializer_list>
 #include "assert.h"
+#include "BitMap.h"
 
 
 namespace Problems

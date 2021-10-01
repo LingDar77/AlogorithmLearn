@@ -141,17 +141,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CachedForwardList.h" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Algorithums.h" />
     <ClInclude Include="AlogoEasy.h" />
+    <ClInclude Include="BalancedBinarySearchTree.h" />
+    <ClInclude Include="BinaryHeap.h" />
+    <ClInclude Include="BinarySearchTree.h" />
+    <ClInclude Include="BinaryTree.h" />
+    <ClInclude Include="BinomialQueue.h" />
+    <ClInclude Include="BitMap.h" />
+    <ClInclude Include="Deque.h" />
     <ClInclude Include="Difinitions.h" />
+    <ClInclude Include="ForwardList.h" />
     <ClInclude Include="Functor.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="Operations.hpp" />
+    <ClInclude Include="PriorityQueue.h" />
     <ClInclude Include="ProblemSet.h" />
-    <ClInclude Include="Structures.h" />
+    <ClInclude Include="Queue.h" />
+    <ClInclude Include="SPTree.h" />
+    <ClInclude Include="Stack.h" />
+    <ClInclude Include="Number.h" />
     <ClInclude Include="Limits.h" />
+    <ClInclude Include="ThreadedTree.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

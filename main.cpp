@@ -1,14 +1,12 @@
-#include <vector>
 #include <iostream>
 #include "AlogoEasy.h"
 #include <string>
 #include "Helper.h"
 #include "ProblemSet.h"
-#include "Structures.h"
-#include "Functor.h"
-#include <list>
-#include <corecrt_malloc.h>
 #include "Algorithums.h"
+#include "Vector.h"
+#include "BinarySearchTree.h"
+#include "CachedForwardList.h"
 using namespace std;
 using namespace Struct;
 using namespace Algo;
@@ -327,9 +325,10 @@ testClass3&& testa(testClass3& i)
 
 int main()
 {
-	ForwardList<int> v1 = { 53, 65, 42, 23, 1, 47 };
+	Vector<int> v1 = { 53, 65, 42, 23, 123, 231, 1, 47, 13, 45 };
 
-	MergeSort(v1.Begin(), v1.End());
+	QuickSort(v1);
+
 
 	cout << v1 << endl;
 
